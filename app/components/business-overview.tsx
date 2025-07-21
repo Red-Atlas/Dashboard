@@ -13,6 +13,22 @@ interface BusinessMetrics {
   pageViewsByDay: Array<{ date: string; views: number; fullDate?: string }>
 }
 
+interface SubscriptionData {
+  active_count: number
+  churn_rate: number
+  mrr: number
+  latest_subscriptions: Array<{
+    id: string
+    customer_name: string
+    customer_email: string
+    amount: number
+    currency: string
+    status: string
+    created: string
+    product_name: string
+  }>
+}
+
 
 
 interface Transaction {
@@ -97,6 +113,7 @@ export default function BusinessOverview() {
     pageViewsByDay: [],
   })
   const [transactions, setTransactions] = useState<Transaction[]>([])
+  const [subscriptions, setSubscriptions] = useState<SubscriptionData | null>(null)
   const [revenueMetrics, setRevenueMetrics] = useState<RevenueMetrics>({
     totalRevenue: 0,
     transactionCount: 0,
@@ -113,6 +130,7 @@ export default function BusinessOverview() {
     pageViews: true,
     transactions: true,
     revenue: true,
+    subscriptions: true,
   })
   const [lastUpdated, setLastUpdated] = useState<Date>(new Date())
 
@@ -192,10 +210,21 @@ export default function BusinessOverview() {
     }
   }
 
-
+  const fetchSubscriptions = async () => {
+    setLoading((prev) => ({ ...prev, subscriptions: true }))
+    try {
+      const response = await fetch("/api/metrics/stripe-subscriptions")
+      const data = await response.json()
+      setSubscriptions(data)
+    } catch (error) {
+      console.error("Failed to fetch subscriptions:", error)
+    } finally {
+      setLoading((prev) => ({ ...prev, subscriptions: false }))
+    }
+  }
 
   const fetchAllMetrics = async () => {
-    await Promise.all([fetchActiveUsers(), fetchRegisteredUsers(), fetchPageViews(), fetchTransactions(), fetchRevenueMetrics()])
+    await Promise.all([fetchActiveUsers(), fetchRegisteredUsers(), fetchPageViews(), fetchTransactions(), fetchRevenueMetrics(), fetchSubscriptions()])
     setLastUpdated(new Date())
   }
 
@@ -211,6 +240,7 @@ export default function BusinessOverview() {
         fetchPageViews()
         fetchTransactions()
         fetchRevenueMetrics()
+        fetchSubscriptions()
         setLastUpdated(new Date())
       },
       5 * 60 * 1000, // 5 minutos
@@ -255,9 +285,10 @@ export default function BusinessOverview() {
                 percentageChange={metrics.activeUsersPercentageChange}
               />
               <MetricCard
-                title="Registered Users (All Time)"
-                value={metrics.registeredUsers}
-                loading={loading.registeredUsers}
+                title="Active Subscriptions"
+                value={subscriptions?.active_count || 0}
+                loading={loading.subscriptions}
+                color="green"
               />
               <MetricCard
                 title="Total Revenue"

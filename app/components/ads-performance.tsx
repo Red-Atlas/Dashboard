@@ -40,17 +40,17 @@ interface CountryData {
 
 export default function AdsPerformance() {
   const [metrics, setMetrics] = useState<AdsMetrics | null>(null)
-  const [subscriptions, setSubscriptions] = useState<SubscriptionData | null>(null)
+  const [registeredUsers, setRegisteredUsers] = useState<number>(0)
   const [osData, setOsData] = useState<OperatingSystemData[]>([])
   const [countryData, setCountryData] = useState<CountryData[]>([])
   const [loading, setLoading] = useState(true)
 
   const fetchMetrics = async () => {
     try {
-      const [ctrWeek, roasWeek, subscriptionsData, devicesData, geoData] = await Promise.all([
+      const [ctrWeek, roasWeek, registeredUsersData, devicesData, geoData] = await Promise.all([
         fetch("/api/metrics/ctr-week").then((r) => r.json()),
         fetch("/api/metrics/roas-week").then((r) => r.json()),
-        fetch("/api/metrics/stripe-subscriptions").then((r) => r.json()),
+        fetch("/api/metrics/registered-users").then((r) => r.json()),
         fetch("/api/metrics/device-breakdown").then((r) => r.json()),
         fetch("/api/metrics/geographic-breakdown").then((r) => r.json()),
       ])
@@ -63,7 +63,7 @@ export default function AdsPerformance() {
         ctrDaily: [], // Ya no lo necesitamos
       })
 
-      setSubscriptions(subscriptionsData)
+      setRegisteredUsers(registeredUsersData.value)
       setOsData(devicesData.data)
       setCountryData(geoData.data)
       
@@ -147,10 +147,10 @@ export default function AdsPerformance() {
               <div className="text-xl text-gray-700 font-semibold text-center">ROAS (Last 7 Days)</div>
             </div>
 
-            {/* Active Subscriptions */}
+            {/* Registered Users */}
             <div className="bg-white rounded-2xl shadow-lg p-6">
-              <div className="text-6xl font-bold text-green-600 mb-4 text-center">{subscriptions?.active_count || 0}</div>
-              <div className="text-xl text-gray-700 font-semibold text-center">Active Subscriptions</div>
+              <div className="text-6xl font-bold text-gray-900 mb-4 text-center">{registeredUsers || 0}</div>
+              <div className="text-xl text-gray-700 font-semibold text-center">Registered Users (All Time)</div>
             </div>
           </div>
 
