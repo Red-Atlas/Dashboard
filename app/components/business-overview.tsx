@@ -252,7 +252,9 @@ export default function BusinessOverview() {
   }, [])
 
   const formatDate = (dateString: string) => {
-    const date = new Date(dateString)
+    // Parse date string in local timezone to avoid UTC conversion issues
+    const [year, month, day] = dateString.split('-').map(Number);
+    const date = new Date(year, month - 1, day); // month is 0-indexed
     return date.toLocaleDateString("en-US", { month: "short", day: "numeric" })
   }
 

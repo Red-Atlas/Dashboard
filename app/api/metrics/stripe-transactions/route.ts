@@ -13,9 +13,14 @@ export async function GET() {
   })
 
   try {
-    // Get recent charges (last 30 days, limit to latest 10)
+    // Get recent charges (last 30 days, more transactions to show all recent activity)
+    const thirtyDaysAgo = Math.floor(Date.now() / 1000) - (30 * 24 * 60 * 60);
+    
     const charges = await stripe.charges.list({
-      limit: 10,
+      limit: 50, // Increased limit to show more transactions
+      created: {
+        gte: thirtyDaysAgo, // Only get charges from last 30 days
+      },
     })
 
     // Transform Stripe charges to our transaction format
@@ -45,11 +50,26 @@ export async function GET() {
           customerName = charge.billing_details.name
         }
 
+        // Convert Stripe timestamp to Puerto Rico timezone (AST)
+        const utcDate = new Date(charge.created * 1000);
+        
+        // Use toLocaleDateString with Puerto Rico timezone to get correct date
+        const puertoRicoDate = utcDate.toLocaleDateString('en-US', {
+          timeZone: 'America/Puerto_Rico',
+          year: 'numeric',
+          month: '2-digit',
+          day: '2-digit'
+        });
+        
+        // Convert MM/DD/YYYY to YYYY-MM-DD format
+        const [month, day, year] = puertoRicoDate.split('/');
+        const dateString = `${year}-${month.padStart(2, '0')}-${day.padStart(2, '0')}`;
+
         return {
           amount: charge.amount / 100, // Convert from cents to dollars
           email: customerEmail || 'No email available',
           customer_name: customerName || null,
-          date: new Date(charge.created * 1000).toISOString().split('T')[0], // Convert timestamp to YYYY-MM-DD
+          date: dateString, // Date in Puerto Rico timezone
           currency: charge.currency.toUpperCase(),
           status: charge.status,
         }
