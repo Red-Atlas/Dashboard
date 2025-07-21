@@ -1,15 +1,22 @@
 "use client"
 
 import { useState, useEffect } from "react"
-import { TrendingUp, TrendingDown } from "lucide-react"
+
 import Image from "next/image"
 
-interface AdsMetrics {
-  ctr: number
-  ctrTrend: "up" | "down" | "neutral"
-  roas: number
-  roasTrend: "up" | "down" | "neutral"
-  ctrDaily: Array<{ date: string; ctr: number }>
+interface UserMetrics {
+  activeUsers24h: {
+    value: number
+    previousValue: number
+    percentageChange: number
+    trend: 'up' | 'down' | 'neutral'
+  }
+  activeUsers7days: {
+    value: number
+    previousValue: number
+    percentageChange: number
+    trend: 'up' | 'down' | 'neutral'
+  }
 }
 
 interface SubscriptionData {
@@ -39,7 +46,7 @@ interface CountryData {
 }
 
 export default function AdsPerformance() {
-  const [metrics, setMetrics] = useState<AdsMetrics | null>(null)
+  const [metrics, setMetrics] = useState<UserMetrics | null>(null)
   const [registeredUsers, setRegisteredUsers] = useState<number>(0)
   const [osData, setOsData] = useState<OperatingSystemData[]>([])
   const [countryData, setCountryData] = useState<CountryData[]>([])
@@ -47,20 +54,27 @@ export default function AdsPerformance() {
 
   const fetchMetrics = async () => {
     try {
-      const [ctrWeek, roasWeek, registeredUsersData, devicesData, geoData] = await Promise.all([
-        fetch("/api/metrics/ctr-week").then((r) => r.json()),
-        fetch("/api/metrics/roas-week").then((r) => r.json()),
+      const [activeUsers24h, activeUsers7days, registeredUsersData, devicesData, geoData] = await Promise.all([
+        fetch("/api/metrics/active-users-24h").then((r) => r.json()),
+        fetch("/api/metrics/active-users-7days").then((r) => r.json()),
         fetch("/api/metrics/registered-users").then((r) => r.json()),
         fetch("/api/metrics/device-breakdown").then((r) => r.json()),
         fetch("/api/metrics/geographic-breakdown").then((r) => r.json()),
       ])
 
       setMetrics({
-        ctr: ctrWeek.value,
-        ctrTrend: ctrWeek.trend,
-        roas: roasWeek.value,
-        roasTrend: roasWeek.trend,
-        ctrDaily: [], // Ya no lo necesitamos
+        activeUsers24h: {
+          value: activeUsers24h.value,
+          previousValue: activeUsers24h.previousValue,
+          percentageChange: activeUsers24h.percentageChange,
+          trend: activeUsers24h.trend
+        },
+        activeUsers7days: {
+          value: activeUsers7days.value,
+          previousValue: activeUsers7days.previousValue,
+          percentageChange: activeUsers7days.percentageChange,
+          trend: activeUsers7days.trend
+        },
       })
 
       setRegisteredUsers(registeredUsersData.value)
@@ -92,22 +106,7 @@ export default function AdsPerformance() {
     )
   }
 
-  const getTrendColor = (trend: string) => {
-    switch (trend) {
-      case "up":
-        return "text-green-600"
-      case "down":
-        return "text-red-600"
-      default:
-        return "text-gray-600"
-    }
-  }
 
-  const TrendIcon = ({ trend }: { trend: string }) => {
-    if (trend === "up") return <TrendingUp className="w-8 h-8" />
-    if (trend === "down") return <TrendingDown className="w-8 h-8" />
-    return null
-  }
 
   return (
     <div className="min-h-screen p-8 relative">
@@ -118,33 +117,47 @@ export default function AdsPerformance() {
 
       {/* Títulos en esquina superior derecha */}
       <div className="absolute top-8 right-8 text-right">
-        <p className="text-xl text-gray-600">Performance Metrics</p>
+        <p className="text-xl text-gray-600">User Analytics</p>
       </div>
 
               {/* Contenido principal con margen superior para el header */}
         <div className="mt-24 px-8">
           {/* Top Metrics - 3 cards principales */}
           <div className="grid grid-cols-3 gap-6 mb-8 max-w-7xl mx-auto">
-                                  {/* CTR */}
+                                  {/* Active Users 24h */}
             <div className="bg-white rounded-2xl shadow-lg p-6">
               <div className="flex items-center justify-between mb-4">
-                <div className="text-6xl font-bold text-red-600">{metrics?.ctr.toFixed(2)}%</div>
-                <div className={getTrendColor(metrics?.ctrTrend || "neutral")}>
-                  <TrendIcon trend={metrics?.ctrTrend || "neutral"} />
-                </div>
+                <div className="text-6xl font-bold text-green-600">{metrics?.activeUsers24h.value.toLocaleString() || 0}</div>
+                {metrics?.activeUsers24h && (
+                  <div className={`text-sm font-semibold ml-3 ${
+                    metrics.activeUsers24h.trend === 'up' ? 'text-green-600' : 
+                    metrics.activeUsers24h.trend === 'down' ? 'text-red-600' : 'text-gray-600'
+                  }`}>
+                    {metrics.activeUsers24h.trend === 'up' ? '↗' : 
+                     metrics.activeUsers24h.trend === 'down' ? '↘' : '→'} {Math.abs(metrics.activeUsers24h.percentageChange).toFixed(1)}%
+                  </div>
+                )}
               </div>
-              <div className="text-xl text-gray-700 font-semibold text-center">CTR (Last 7 Days)</div>
+              <div className="text-xl text-gray-700 font-semibold text-center">Usuarios Activos (24 Horas)</div>
+              <div className="text-xs text-gray-500 text-center mt-2">vs 24h anteriores</div>
             </div>
 
-            {/* ROAS */}
+            {/* Active Users 7 Days */}
             <div className="bg-white rounded-2xl shadow-lg p-6">
               <div className="flex items-center justify-between mb-4">
-                <div className="text-6xl font-bold text-gray-900">{metrics?.roas.toFixed(1)}x</div>
-                <div className={getTrendColor(metrics?.roasTrend || "neutral")}>
-                  <TrendIcon trend={metrics?.roasTrend || "neutral"} />
-                </div>
+                <div className="text-6xl font-bold text-gray-900">{metrics?.activeUsers7days.value.toLocaleString() || 0}</div>
+                {metrics?.activeUsers7days && (
+                  <div className={`text-sm font-semibold ml-3 ${
+                    metrics.activeUsers7days.trend === 'up' ? 'text-green-600' : 
+                    metrics.activeUsers7days.trend === 'down' ? 'text-red-600' : 'text-gray-600'
+                  }`}>
+                    {metrics.activeUsers7days.trend === 'up' ? '↗' : 
+                     metrics.activeUsers7days.trend === 'down' ? '↘' : '→'} {Math.abs(metrics.activeUsers7days.percentageChange).toFixed(1)}%
+                  </div>
+                )}
               </div>
-              <div className="text-xl text-gray-700 font-semibold text-center">ROAS (Last 7 Days)</div>
+              <div className="text-xl text-gray-700 font-semibold text-center">Usuarios Activos (7 Días)</div>
+              <div className="text-xs text-gray-500 text-center mt-2">vs semana anterior</div>
             </div>
 
             {/* Registered Users */}
