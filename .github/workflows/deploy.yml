@@ -34,7 +34,7 @@ jobs:
         run: echo "GOOGLE_APPLICATION_CREDENTIALS=/tmp/credentials.json" >> $GITHUB_ENV
 
       - name: Build project
-        run: pnpm build && pnpm next export
+        run: pnpm build
         env:
           GA_PROPERTY_ID: ${{ secrets.GA_PROPERTY_ID }}
           STRIPE_SECRET_KEY: ${{ secrets.STRIPE_SECRET_KEY }}
