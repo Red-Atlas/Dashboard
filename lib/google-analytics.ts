@@ -549,7 +549,7 @@ export async function getActiveUsers24Hours() {
             endDate: 'today',
           },
         ],
-        metrics: [{ name: 'activeUsers' }],
+        metrics: [{ name: 'totalUsers' }],
       }),
       // Período anterior: 24 horas del día anterior
       client.runReport({
@@ -560,7 +560,7 @@ export async function getActiveUsers24Hours() {
             endDate: '1daysAgo',
           },
         ],
-        metrics: [{ name: 'activeUsers' }],
+        metrics: [{ name: 'totalUsers' }],
       })
     ]);
 
@@ -626,7 +626,7 @@ export async function getActiveUsers7Days() {
             endDate: 'today',
           },
         ],
-        metrics: [{ name: 'activeUsers' }],
+        metrics: [{ name: 'totalUsers' }],
       }),
       // Período anterior: semana anterior (días 8-14 atrás)
       client.runReport({
@@ -637,7 +637,7 @@ export async function getActiveUsers7Days() {
             endDate: '7daysAgo',
           },
         ],
-        metrics: [{ name: 'activeUsers' }],
+        metrics: [{ name: 'totalUsers' }],
       })
     ]);
 
