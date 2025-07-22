@@ -324,7 +324,7 @@ export default function BusinessOverview() {
               ) : (
                 <>
                   <div className="text-5xl font-bold text-gray-900 mb-2">{metrics.pageViewsYesterday.toLocaleString()}</div>
-                  <div className="text-lg text-gray-700 mb-6">Page Views (Yesterday)</div>
+                  <div className="text-lg text-gray-700 mb-6">Páginas vistas (Ayer)</div>
 
                   {metrics.pageViewsByDay.length > 0 && (
                     <div className="h-64 -mx-2">
