@@ -106,8 +106,20 @@ export async function GET() {
       revenuePercentageChange = 100 // If no previous revenue but current revenue exists
     }
 
-    // Calculate transaction counts using successful charges (matches Stripe dashboard)
-    const transactionCount = allCharges.length
+    // Calculate transaction counts separately using last 30 days (to match Stripe transactions view)
+    const thirtyDaysAgo = new Date(puertoRicoNow)
+    thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30)
+    thirtyDaysAgo.setHours(0, 0, 0, 0)
+
+    const transactionCharges = await stripe.charges.list({
+      created: {
+        gte: Math.floor(thirtyDaysAgo.getTime() / 1000),
+      },
+      limit: 100,
+    });
+
+    const transactionCount = transactionCharges.data.filter((charge: any) => charge.status === 'succeeded').length
+    console.log(`Transactions (last 30 days): ${transactionCount} (should match Stripe: 52)`)
     const previousTransactionCount = previousTransactions.length
 
     // Calculate transaction percentage change
