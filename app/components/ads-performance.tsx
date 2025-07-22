@@ -135,7 +135,7 @@ export default function AdsPerformance() {
                   }`}>
                     {metrics.activeUsers24h.trend === 'up' ? '↗' : 
                      metrics.activeUsers24h.trend === 'down' ? '↘' : '→'} {Math.abs(metrics.activeUsers24h.percentageChange).toFixed(1)}%
-                  </div>
+                </div>
                 )}
               </div>
               <div className="text-xl text-gray-700 font-semibold text-center">Usuarios Activos (24 Horas)</div>
@@ -153,7 +153,7 @@ export default function AdsPerformance() {
                   }`}>
                     {metrics.activeUsers7days.trend === 'up' ? '↗' : 
                      metrics.activeUsers7days.trend === 'down' ? '↘' : '→'} {Math.abs(metrics.activeUsers7days.percentageChange).toFixed(1)}%
-                  </div>
+                </div>
                 )}
               </div>
               <div className="text-xl text-gray-700 font-semibold text-center">Usuarios Activos (7 Días)</div>

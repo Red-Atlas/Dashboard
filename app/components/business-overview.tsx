@@ -49,6 +49,9 @@ interface RevenueMetrics {
   previousRevenue: number
   transactionPercentageChange: number
   previousTransactionCount: number
+  grossRevenue?: number
+  totalFees?: number
+  feePercentage?: number
 }
 
 interface MetricCardProps {
@@ -279,7 +282,7 @@ export default function BusinessOverview() {
             {/* Metrics Grid */}
             <div className="grid grid-cols-2 gap-6">
               <MetricCard
-                title="Active Users (Last 30 Minutes)"
+                title="Usuarios Activos (Últimos 30 minutos)"
                 value={metrics.activeUsers}
                 loading={loading.activeUsers}
                 subtitle="vs 30 minutes ago"
@@ -287,25 +290,25 @@ export default function BusinessOverview() {
                 percentageChange={metrics.activeUsersPercentageChange}
               />
               <MetricCard
-                title="Active Subscriptions"
+                title="Suscripciones Activas"
                 value={subscriptions?.active_count || 0}
                 loading={loading.subscriptions}
                 color="green"
               />
               <MetricCard
-                title="Total Revenue"
+                title="Volumen de ventas neto"
                 value={revenueMetrics.totalRevenue}
                 loading={loading.revenue}
-                subtitle="Last 30 days"
+                subtitle={`Gross: $${revenueMetrics.grossRevenue?.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 }) || '0.00'} • Últimas 4 semanas`}
                 color="green"
                 isCurrency={true}
                 percentageChange={revenueMetrics.percentageChange}
               />
               <MetricCard
-                title="Total Transactions"
+                title="Transacciones exitosas"
                 value={revenueMetrics.transactionCount}
                 loading={loading.revenue}
-                subtitle="Last 30 days"
+                subtitle="Últimas 4 semanas"
                 percentageChange={revenueMetrics.transactionPercentageChange}
               />
             </div>

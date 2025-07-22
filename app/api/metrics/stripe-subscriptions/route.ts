@@ -6,29 +6,45 @@ const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!, {
 
 export async function GET() {
   try {
-    // Obtener suscripciones activas
-    const subscriptions = await stripe.subscriptions.list({
-      status: 'active',
-      limit: 100,
-    });
+    // Obtener TODAS las suscripciones activas usando paginación
+    let allActiveSubscriptions: any[] = [];
+    let hasMore = true;
+    let startingAfter: string | undefined = undefined;
+
+    while (hasMore) {
+      const subscriptionsBatch = await stripe.subscriptions.list({
+        status: 'active',
+        limit: 100,
+        starting_after: startingAfter,
+      });
+
+      allActiveSubscriptions = allActiveSubscriptions.concat(subscriptionsBatch.data);
+      hasMore = subscriptionsBatch.has_more;
+      
+      if (hasMore && subscriptionsBatch.data.length > 0) {
+        startingAfter = subscriptionsBatch.data[subscriptionsBatch.data.length - 1].id;
+      }
+    }
+
+    console.log(`Total active subscriptions found: ${allActiveSubscriptions.length}`);
 
     // Obtener suscripciones canceladas del último mes
     const canceledSubscriptions = await stripe.subscriptions.list({
       status: 'canceled',
-      limit: 100,
+      limit: 200,
       created: {
         gte: Math.floor(Date.now() / 1000) - (30 * 24 * 60 * 60), // Último mes
       },
     });
 
     // Calcular métricas
-    const totalActive = subscriptions.data.length;
+    const totalActive = allActiveSubscriptions.length;
     const totalCanceled = canceledSubscriptions.data.length;
     const churnRate = totalActive > 0 ? (totalCanceled / (totalActive + totalCanceled)) * 100 : 0;
     
     // Calcular MRR (Monthly Recurring Revenue)
     let mrr = 0;
-    subscriptions.data.forEach(sub => {
+    allActiveSubscriptions.forEach(sub => {
       if (sub.items.data[0]?.price?.recurring?.interval === 'month') {
         mrr += sub.items.data[0]?.price?.unit_amount || 0;
       } else if (sub.items.data[0]?.price?.recurring?.interval === 'year') {
