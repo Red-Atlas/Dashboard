@@ -293,7 +293,7 @@ export default function BusinessOverview() {
                 title="Suscripciones Activas"
                 value={subscriptions?.active_count || 0}
                 loading={loading.subscriptions}
-                color="green"
+                color="green" 
               />
               <MetricCard
                 title="Volumen de ventas neto"
@@ -394,7 +394,7 @@ export default function BusinessOverview() {
           {/* Right Column - 40% width (2/5) - altura fija para coincidir */}
           <div className="col-span-2">
             <div className="bg-white rounded-2xl shadow-lg p-6 flex flex-col" style={{ height: "43.5rem" }}>
-              <h3 className="text-2xl font-bold text-gray-900 mb-6">Latest Transactions</h3>
+              <h3 className="text-2xl font-bold text-gray-900 mb-6">Últimas transacciones</h3>
 
               {loading.transactions ? (
                 <div className="space-y-3 flex-1">
