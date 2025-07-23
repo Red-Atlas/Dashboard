@@ -106,10 +106,6 @@ export default function Dashboard() {
   const handleLogin = (e: React.FormEvent) => {
     e.preventDefault()
     
-    // Debug: Log what password is expected
-    console.log('Expected password:', process.env.NEXT_PUBLIC_DASHBOARD_PASSWORD || 'NOT SET')
-    console.log('Entered password:', password)
-    
     // Simple password check - in production, use proper auth
     if (password === process.env.NEXT_PUBLIC_DASHBOARD_PASSWORD) {
       setIsAuthenticated(true)
