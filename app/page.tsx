@@ -16,9 +16,46 @@ const SCREEN_DURATIONS = {
 type Screen = "business" | "ads" | "branding"
 
 export default function Dashboard() {
+  const [isAuthenticated, setIsAuthenticated] = useState(false)
+  const [password, setPassword] = useState("")
+  const [error, setError] = useState("")
   const [currentScreen, setCurrentScreen] = useState<Screen>("business")
   const [isTransitioning, setIsTransitioning] = useState(false)
   const intervalRef = useRef<NodeJS.Timeout | null>(null)
+
+  // Check if already authenticated (session storage)
+  useEffect(() => {
+    const authStatus = sessionStorage.getItem('dashboard-auth')
+    if (authStatus === 'authenticated') {
+      setIsAuthenticated(true)
+    }
+  }, [])
+
+  // Auto-rotation effect - MUST be here before any early returns
+  useEffect(() => {
+    if (!isAuthenticated) return // Don't run if not authenticated
+
+    const rotateScreen = () => {
+      if (!isTransitioning) {
+        const nextScreen = getNextScreen(currentScreen)
+        navigateToScreen(nextScreen)
+      }
+    }
+
+    // Clear existing interval
+    if (intervalRef.current) {
+      clearInterval(intervalRef.current)
+    }
+
+    // Set new interval
+    intervalRef.current = setInterval(rotateScreen, SCREEN_DURATIONS[currentScreen])
+
+    return () => {
+      if (intervalRef.current) {
+        clearInterval(intervalRef.current)
+      }
+    }
+  }, [currentScreen, isTransitioning, isAuthenticated])
 
   const getNextScreen = (current: Screen): Screen => {
     switch (current) {
@@ -66,29 +103,24 @@ export default function Dashboard() {
     navigateToScreen(prevScreen)
   }
 
-  // Auto-rotation effect
-  useEffect(() => {
-    const rotateScreen = () => {
-      if (!isTransitioning) {
-        const nextScreen = getNextScreen(currentScreen)
-        navigateToScreen(nextScreen)
-      }
+  const handleLogin = (e: React.FormEvent) => {
+    e.preventDefault()
+    
+    // Simple password check - in production, use proper auth
+    if (password === process.env.NEXT_PUBLIC_DASHBOARD_PASSWORD || password === "redatlas2024") {
+      setIsAuthenticated(true)
+      setError("")
+      sessionStorage.setItem('dashboard-auth', 'authenticated')
+    } else {
+      setError("Contraseña incorrecta")
+      setPassword("")
     }
+  }
 
-    // Clear existing interval
-    if (intervalRef.current) {
-      clearInterval(intervalRef.current)
-    }
-
-    // Set new interval
-    intervalRef.current = setInterval(rotateScreen, SCREEN_DURATIONS[currentScreen])
-
-    return () => {
-      if (intervalRef.current) {
-        clearInterval(intervalRef.current)
-      }
-    }
-  }, [currentScreen, isTransitioning])
+  const handleLogout = () => {
+    setIsAuthenticated(false)
+    sessionStorage.removeItem('dashboard-auth')
+  }
 
   const renderCurrentScreen = () => {
     switch (currentScreen) {
@@ -103,8 +135,66 @@ export default function Dashboard() {
     }
   }
 
+  // Show login form if not authenticated
+  if (!isAuthenticated) {
+    return (
+      <div className="min-h-screen bg-gray-100 flex items-center justify-center">
+        <div className="bg-white p-8 rounded-2xl shadow-lg w-full max-w-md">
+          <div className="text-center mb-6">
+            <h1 className="text-2xl font-bold text-gray-900">Dashboard RED Atlas</h1>
+            <p className="text-gray-600 mt-2">Ingresa la contraseña para acceder</p>
+          </div>
+          
+          <form onSubmit={handleLogin} className="space-y-4">
+            <div>
+              <label htmlFor="password" className="block text-sm font-medium text-gray-700 mb-2">
+                Contraseña
+              </label>
+              <input
+                type="password"
+                id="password"
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
+                className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-red-500 focus:border-red-500 outline-none"
+                placeholder="••••••••"
+                required
+              />
+            </div>
+            
+            {error && (
+              <div className="text-red-600 text-sm text-center bg-red-50 p-3 rounded-lg">
+                {error}
+              </div>
+            )}
+            
+            <button
+              type="submit"
+              className="w-full bg-red-600 text-white py-3 px-4 rounded-lg hover:bg-red-700 transition-colors font-medium"
+            >
+              Acceder al Dashboard
+            </button>
+          </form>
+          
+          <div className="mt-6 text-center text-xs text-gray-500">
+            Datos confidenciales - Solo personal autorizado
+          </div>
+        </div>
+      </div>
+    )
+  }
+
+
+
   return (
     <div className="min-h-screen bg-gray-100 overflow-hidden relative">
+      {/* Logout Button */}
+      <button
+        onClick={handleLogout}
+        className="absolute top-4 right-4 z-20 bg-red-600 text-white px-4 py-2 rounded-lg text-sm hover:bg-red-700 transition-colors"
+      >
+        Cerrar Sesión
+      </button>
+
       {/* Left Arrow */}
       <button
         onClick={handlePrevious}
