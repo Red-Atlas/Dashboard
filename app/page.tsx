@@ -107,7 +107,7 @@ export default function Dashboard() {
     e.preventDefault()
     
     // Simple password check - in production, use proper auth
-    if (password === process.env.NEXT_PUBLIC_DASHBOARD_PASSWORD || password === "redatlas2024") {
+    if (password === process.env.NEXT_PUBLIC_DASHBOARD_PASSWORD) {
       setIsAuthenticated(true)
       setError("")
       sessionStorage.setItem('dashboard-auth', 'authenticated')
