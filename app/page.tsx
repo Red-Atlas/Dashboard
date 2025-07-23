@@ -2,6 +2,7 @@
 
 import { useState, useEffect, useRef } from "react"
 import { ChevronLeft, ChevronRight } from "lucide-react"
+import Image from "next/image"
 import BusinessOverview from "./components/business-overview"
 import AdsPerformance from "./components/ads-performance"
 import BrandingSlide from "./components/branding-slide"
@@ -138,10 +139,20 @@ export default function Dashboard() {
   // Show login form if not authenticated
   if (!isAuthenticated) {
     return (
-      <div className="min-h-screen bg-gray-100 flex items-center justify-center">
+      <div className="min-h-screen bg-gray-100 flex items-center justify-center p-4">
         <div className="bg-white p-8 rounded-2xl shadow-lg w-full max-w-md">
-          <div className="text-center mb-6">
-            <h1 className="text-2xl font-bold text-gray-900">Dashboard RED Atlas</h1>
+          <div className="text-center mb-8">
+            {/* RED Atlas Logo */}
+            <div className="mb-6">
+              <Image 
+                src="/red-atlas-logo.png" 
+                alt="RED Atlas Logo" 
+                width={200} 
+                height={60} 
+                className="h-16 w-auto mx-auto" 
+              />
+            </div>
+            <h1 className="text-2xl font-bold text-gray-900">Dashboard Empresarial</h1>
             <p className="text-gray-600 mt-2">Ingresa la contraseña para acceder</p>
           </div>
           
@@ -155,7 +166,7 @@ export default function Dashboard() {
                 id="password"
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
-                className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-red-500 focus:border-red-500 outline-none"
+                className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-red-500 focus:border-red-500 outline-none transition-all duration-200 hover:border-gray-400"
                 placeholder="••••••••"
                 required
               />
@@ -169,14 +180,17 @@ export default function Dashboard() {
             
             <button
               type="submit"
-              className="w-full bg-red-600 text-white py-3 px-4 rounded-lg hover:bg-red-700 transition-colors font-medium"
+              className="w-full bg-red-600 text-white py-3 px-4 rounded-lg hover:bg-red-700 transition-all duration-200 font-medium shadow-lg hover:shadow-xl transform hover:-translate-y-0.5"
             >
               Acceder al Dashboard
             </button>
           </form>
           
-          <div className="mt-6 text-center text-xs text-gray-500">
-            Datos confidenciales - Solo personal autorizado
+          <div className="mt-6 pt-4 border-t border-gray-200 text-center text-xs text-gray-500">
+            <div className="flex items-center justify-center space-x-2">
+              <span>🔒</span>
+              <span>Datos confidenciales - Solo personal autorizado</span>
+            </div>
           </div>
         </div>
       </div>

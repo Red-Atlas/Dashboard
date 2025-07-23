@@ -45,6 +45,11 @@ interface CountryData {
   users: number
 }
 
+// Helper function for European integer formatting (thousands with . but no decimals)
+const formatEuropeanInteger = (val: number) => {
+  return val.toString().replace(/\B(?=(\d{3})+(?!\d))/g, '.')
+}
+
 export default function AdsPerformance() {
   const [metrics, setMetrics] = useState<UserMetrics | null>(null)
   const [registeredUsers, setRegisteredUsers] = useState<number>(0)
@@ -127,7 +132,7 @@ export default function AdsPerformance() {
                                   {/* Active Users 24h */}
             <div className="bg-white rounded-2xl shadow-lg p-6">
               <div className="flex items-center justify-between mb-4">
-                <div className="text-6xl font-bold text-green-600">{metrics?.activeUsers24h.value.toLocaleString() || 0}</div>
+                <div className="text-6xl font-bold text-green-600">{metrics?.activeUsers24h.value ? formatEuropeanInteger(metrics.activeUsers24h.value) : 0}</div>
                 {metrics?.activeUsers24h && (
                   <div className={`text-sm font-semibold ml-3 ${
                     metrics.activeUsers24h.trend === 'up' ? 'text-green-600' : 
@@ -145,7 +150,7 @@ export default function AdsPerformance() {
             {/* Active Users 7 Days */}
             <div className="bg-white rounded-2xl shadow-lg p-6">
               <div className="flex items-center justify-between mb-4">
-                <div className="text-6xl font-bold text-gray-900">{metrics?.activeUsers7days.value.toLocaleString() || 0}</div>
+                <div className="text-6xl font-bold text-gray-900">{metrics?.activeUsers7days.value ? formatEuropeanInteger(metrics.activeUsers7days.value) : 0}</div>
                 {metrics?.activeUsers7days && (
                   <div className={`text-sm font-semibold ml-3 ${
                     metrics.activeUsers7days.trend === 'up' ? 'text-green-600' : 
@@ -162,8 +167,8 @@ export default function AdsPerformance() {
 
             {/* Registered Users */}
             <div className="bg-white rounded-2xl shadow-lg p-6">
-              <div className="text-6xl font-bold text-gray-900 mb-4 text-center">{registeredUsers || 0}</div>
-              <div className="text-xl text-gray-700 font-semibold text-center">Registered Users (All Time)</div>
+              <div className="text-6xl font-bold text-gray-900 mb-4 text-center">{formatEuropeanInteger(registeredUsers || 0)}</div>
+              <div className="text-xl text-gray-700 font-semibold text-center">Usuarios Registrados (Total)</div>
             </div>
           </div>
 
@@ -197,7 +202,7 @@ export default function AdsPerformance() {
                           {os.os}
                         </div>
                         <div className="text-center text-gray-700 font-semibold">
-                          {os.users >= 1000 ? `${(os.users / 1000).toFixed(1)}k` : os.users.toLocaleString()}
+                          {os.users >= 1000 ? `${(os.users / 1000).toFixed(1)}k` : formatEuropeanInteger(os.users)}
                         </div>
                       </div>
                     ))}
@@ -230,7 +235,7 @@ export default function AdsPerformance() {
                           {country.country}
                         </div>
                         <div className="text-center text-gray-700 font-semibold">
-                          {country.users >= 1000 ? `${(country.users / 1000).toFixed(1)}k` : country.users.toLocaleString()}
+                          {country.users >= 1000 ? `${(country.users / 1000).toFixed(1)}k` : formatEuropeanInteger(country.users)}
                         </div>
                       </div>
                     ))}

@@ -61,18 +61,39 @@ interface MetricCardProps {
   subtitle?: string
   color?: "green" | "gray"
   isCurrency?: boolean
+  isEuropeanFormat?: boolean
   percentageChange?: number
 }
 
-function MetricCard({ title, value, loading, subtitle, color = "gray", isCurrency = false, percentageChange }: MetricCardProps) {
+// Helper function for European number formatting (thousands with . and decimals with ,)
+const formatEuropeanNumber = (val: number) => {
+  const parts = val.toFixed(2).split('.')
+  const integerPart = parts[0].replace(/\B(?=(\d{3})+(?!\d))/g, '.')
+  const decimalPart = parts[1]
+  return `${integerPart},${decimalPart}`
+}
+
+// Helper function for European integer formatting (thousands with . but no decimals)
+const formatEuropeanInteger = (val: number) => {
+  return val.toString().replace(/\B(?=(\d{3})+(?!\d))/g, '.')
+}
+
+function MetricCard({ title, value, loading, subtitle, color = "gray", isCurrency = false, isEuropeanFormat = false, percentageChange }: MetricCardProps) {
   const textColor = color === "green" ? "text-green-600" : "text-gray-900"
   
   const formatValue = (val: number | null) => {
     if (val === null) return "0"
     if (isCurrency) {
-      return `$${val.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`
+      const formatted = formatEuropeanNumber(val)
+      console.log('Manual formatting currency:', val, 'Result:', formatted)
+      return `$${formatted}`
     }
-    return val.toLocaleString()
+    if (isEuropeanFormat) {
+      const formatted = formatEuropeanInteger(val)
+      console.log('Manual formatting integer:', val, 'Result:', formatted)
+      return formatted
+    }
+    return val.toLocaleString('es-ES')
   }
 
   const formatPercentageChange = (change: number) => {
@@ -287,19 +308,21 @@ export default function BusinessOverview() {
                 loading={loading.activeUsers}
                 subtitle="vs 30 minutes ago"
                 color="green"
+                isEuropeanFormat={true}
                 percentageChange={metrics.activeUsersPercentageChange}
               />
               <MetricCard
                 title="Suscripciones Activas"
                 value={subscriptions?.active_count || 0}
                 loading={loading.subscriptions}
-                color="green" 
+                color="green"
+                isEuropeanFormat={true}
               />
               <MetricCard
                 title="Volumen de ventas neto"
                 value={revenueMetrics.totalRevenue}
                 loading={loading.revenue}
-                subtitle={`Gross: $${revenueMetrics.grossRevenue?.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 }) || '0.00'} • Últimas 4 semanas`}
+                subtitle={`Gross: $${revenueMetrics.grossRevenue ? formatEuropeanNumber(revenueMetrics.grossRevenue) : '0,00'} • Últimas 4 semanas`}
                 color="green"
                 isCurrency={true}
                 percentageChange={revenueMetrics.percentageChange}
@@ -309,6 +332,7 @@ export default function BusinessOverview() {
                 value={revenueMetrics.transactionCount}
                 loading={loading.revenue}
                 subtitle="Últimas 4 semanas"
+                isEuropeanFormat={true}
                 percentageChange={revenueMetrics.transactionPercentageChange}
               />
             </div>
@@ -323,7 +347,7 @@ export default function BusinessOverview() {
                 </div>
               ) : (
                 <>
-                  <div className="text-5xl font-bold text-gray-900 mb-2">{metrics.pageViewsYesterday.toLocaleString()}</div>
+                  <div className="text-5xl font-bold text-gray-900 mb-2">{formatEuropeanInteger(metrics.pageViewsYesterday)}</div>
                   <div className="text-lg text-gray-700 mb-6">Páginas vistas (Ayer)</div>
 
                   {metrics.pageViewsByDay.length > 0 && (
@@ -361,7 +385,7 @@ export default function BusinessOverview() {
                               }}
                               labelStyle={{ color: '#374151', fontWeight: 'bold' }}
                               formatter={(value: any, name: any) => [
-                                `${parseInt(value).toLocaleString()} views`,
+                                `${formatEuropeanInteger(parseInt(value))} views`,
                                 'Page Views'
                               ]}
                               labelFormatter={(label: any) => `${label}`}
