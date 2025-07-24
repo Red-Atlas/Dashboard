@@ -629,27 +629,27 @@ export async function getActiveUsers7Days() {
 
     // Obtener datos actuales (últimos 7 días) y de la semana anterior
     const [currentResponse, previousResponse] = await Promise.all([
-      // Período actual: últimos 7 días
-      client.runReport({
-        property: `properties/${GA_PROPERTY_ID}`,
-        dateRanges: [
-          {
-            startDate: '7daysAgo',
-            endDate: 'today',
-          },
-        ],
-        metrics: [{ name: 'activeUsers' }],
-      }),
-      // Período anterior: semana anterior (días 8-14 atrás)
-      client.runReport({
-        property: `properties/${GA_PROPERTY_ID}`,
-        dateRanges: [
-          {
-            startDate: '14daysAgo',
-            endDate: '7daysAgo',
-          },
-        ],
-        metrics: [{ name: 'activeUsers' }],
+             // Período actual: últimos 7 días completos (sin incluir hoy)
+       client.runReport({
+         property: `properties/${GA_PROPERTY_ID}`,
+         dateRanges: [
+           {
+             startDate: '7daysAgo',
+             endDate: 'yesterday',
+           },
+         ],
+         metrics: [{ name: 'activeUsers' }],
+       }),
+       // Período anterior: semana anterior (días 8-14 atrás)
+       client.runReport({
+         property: `properties/${GA_PROPERTY_ID}`,
+         dateRanges: [
+           {
+             startDate: '14daysAgo',
+             endDate: '8daysAgo',
+           },
+         ],
+         metrics: [{ name: 'activeUsers' }],
       })
     ]);
 
