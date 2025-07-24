@@ -66,17 +66,17 @@ interface MetricCardProps {
   percentageChange?: number
 }
 
-// Helper function for European number formatting (thousands with . and decimals with ,)
+// Helper function for American number formatting (thousands with , and decimals with .)
 const formatEuropeanNumber = (val: number) => {
   const parts = val.toFixed(2).split('.')
-  const integerPart = parts[0].replace(/\B(?=(\d{3})+(?!\d))/g, '.')
+  const integerPart = parts[0].replace(/\B(?=(\d{3})+(?!\d))/g, ',')
   const decimalPart = parts[1]
-  return `${integerPart},${decimalPart}`
+  return `${integerPart}.${decimalPart}`
 }
 
-// Helper function for European integer formatting (thousands with . but no decimals)
+// Helper function for American integer formatting (thousands with , and decimals with .)
 const formatEuropeanInteger = (val: number) => {
-  return val.toString().replace(/\B(?=(\d{3})+(?!\d))/g, '.')
+  return val.toString().replace(/\B(?=(\d{3})+(?!\d))/g, ',')
 }
 
 function MetricCard({ title, value, loading, subtitle, color = "gray", isCurrency = false, isEuropeanFormat = false, percentageChange }: MetricCardProps) {

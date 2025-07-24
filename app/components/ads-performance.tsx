@@ -45,9 +45,9 @@ interface CountryData {
   users: number
 }
 
-// Helper function for European integer formatting (thousands with . but no decimals)
+// Helper function for American integer formatting (thousands with , and decimals with .)
 const formatEuropeanInteger = (val: number) => {
-  return val.toString().replace(/\B(?=(\d{3})+(?!\d))/g, '.')
+  return val.toString().replace(/\B(?=(\d{3})+(?!\d))/g, ',')
 }
 
 export default function AdsPerformance() {
