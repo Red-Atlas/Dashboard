@@ -168,7 +168,8 @@ export default function AdsPerformance() {
             <div className="bg-white rounded-2xl shadow-lg p-6">
               <div className="mb-2" style={{ height: '20px' }}></div>
               <div className="text-6xl font-bold text-gray-900 mb-4 text-center">{formatEuropeanInteger(registeredUsers || 0)}</div>
-              <div className="text-xl text-gray-700 font-semibold text-center">Usuarios Registrados (Total)</div>
+              <div className="text-xl text-gray-700 font-semibold text-center">Usuarios Registrados</div>
+              <div className="text-xs text-gray-500 text-center mt-2">Últimos 28 días</div>
             </div>
           </div>
 
