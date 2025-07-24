@@ -356,7 +356,8 @@ export default function BusinessOverview() {
               ) : (
                 <>
                   <div className="text-5xl font-bold text-gray-900 mb-2">{formatEuropeanInteger(metrics.pageViewsYesterday)}</div>
-                  <div className="text-lg text-gray-700 mb-6">Páginas vistas</div>
+                  <div className="text-lg text-gray-700 mb-2">Páginas vistas</div>
+                  <div className="text-sm text-gray-500 mb-4">Últimos 7 días</div>
 
                   {metrics.pageViewsByDay.length > 0 && (
                     <div className="h-64 -mx-2">
@@ -370,7 +371,7 @@ export default function BusinessOverview() {
                         className="h-full w-full"
                       >
                         <ResponsiveContainer width="100%" height="100%">
-                          <BarChart data={metrics.pageViewsByDay} margin={{ top: 30, right: 10, left: 10, bottom: 5 }}>
+                          <BarChart data={metrics.pageViewsByDay.slice(-7)} margin={{ top: 30, right: 10, left: 10, bottom: 25 }}>
                             <XAxis
                               dataKey="date"
                               axisLine={false}
@@ -396,7 +397,11 @@ export default function BusinessOverview() {
                                 `${formatEuropeanInteger(parseInt(value))} views`,
                                 'Page Views'
                               ]}
-                              labelFormatter={(label: any) => `${label}`}
+                              labelFormatter={(label: any) => {
+                                // Detectar si es HOY comparando con la fecha actual
+                                const today = new Date().toLocaleDateString('es-ES', { day: 'numeric', month: 'short' });
+                                return label === today ? `${label} (HOY - En vivo)` : `${label}`;
+                              }}
                             />
                             <Bar 
                               dataKey="views" 

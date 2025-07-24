@@ -226,7 +226,7 @@ export async function getPageViewsByHour() {
   }
 }
 
-// Función para obtener page views por día (últimos 14 días con totales exactos)
+// Función para obtener page views por día (últimos 6 días + HOY para ver en tiempo real)
 export async function getPageViewsByDay() {
   try {
     const client = getAnalyticsClient();
@@ -239,8 +239,8 @@ export async function getPageViewsByDay() {
       property: `properties/${GA_PROPERTY_ID}`,
       dateRanges: [
         {
-          startDate: '14daysAgo',
-          endDate: 'yesterday', // Hasta ayer para tener datos completos
+          startDate: '6daysAgo',
+          endDate: 'today', // Incluir HOY para ver datos en tiempo real
         },
       ],
       dimensions: [
@@ -279,15 +279,21 @@ export async function getPageViewsByDay() {
       };
     }) || [];
 
-    // Si no hay datos reales, generar datos mock realistas
+    // Si no hay datos reales, generar datos mock realistas (6 días pasados + hoy)
     if (dailyData.length === 0) {
       const mockData = [];
-      for (let i = 13; i >= 0; i--) {
+      for (let i = 6; i >= 0; i--) {
         const date = new Date();
         date.setDate(date.getDate() - i);
+        
+        // Para HOY (i=0), usar un número más bajo ya que el día no ha terminado
+        const views = i === 0 
+          ? Math.floor(Math.random() * 3000) + 1000  // HOY: 1000-4000 (día en progreso)
+          : Math.floor(Math.random() * 8000) + 2000; // Días completos: 2000-10000
+          
         mockData.push({
           date: date.toLocaleDateString('es-ES', { day: 'numeric', month: 'short' }),
-          views: Math.floor(Math.random() * 8000) + 2000, // Entre 2000-10000 como tus datos reales
+          views,
           fullDate: date.toISOString().split('T')[0].replace(/-/g, ''),
         });
       }
@@ -297,14 +303,20 @@ export async function getPageViewsByDay() {
     return dailyData;
   } catch (error) {
     console.error('Error al obtener page views por día:', error);
-    // Fallback a datos mock realistas
+    // Fallback a datos mock realistas (6 días pasados + hoy)
     const mockData = [];
-    for (let i = 13; i >= 0; i--) {
+    for (let i = 6; i >= 0; i--) {
       const date = new Date();
       date.setDate(date.getDate() - i);
+      
+      // Para HOY (i=0), usar un número más bajo ya que el día no ha terminado
+      const views = i === 0 
+        ? Math.floor(Math.random() * 3000) + 1000  // HOY: 1000-4000 (día en progreso)
+        : Math.floor(Math.random() * 8000) + 2000; // Días completos: 2000-10000
+        
       mockData.push({
         date: date.toLocaleDateString('es-ES', { day: 'numeric', month: 'short' }),
-        views: Math.floor(Math.random() * 8000) + 2000,
+        views,
         fullDate: date.toISOString().split('T')[0].replace(/-/g, ''),
       });
     }
