@@ -53,6 +53,15 @@ export async function GET() {
     });
     mrr = mrr / 100; // Convertir de centavos a dólares
 
+    // Calcular desglose por tipo de plan
+    let monthlyCount = 0;
+    let yearlyCount = 0;
+    allActiveSubscriptions.forEach(sub => {
+      const interval = sub.items.data[0]?.price?.recurring?.interval;
+      if (interval === 'month') monthlyCount++;
+      else if (interval === 'year') yearlyCount++;
+    });
+
     // Obtener últimas suscripciones
     const latestSubscriptions = await stripe.subscriptions.list({
       limit: 5,
@@ -72,6 +81,8 @@ export async function GET() {
 
     return Response.json({
       active_count: totalActive,
+      monthly_count: monthlyCount,
+      yearly_count: yearlyCount,
       churn_rate: Number(churnRate.toFixed(2)),
       mrr: Number(mrr.toFixed(2)),
       latest_subscriptions: formattedSubscriptions,

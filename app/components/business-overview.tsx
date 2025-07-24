@@ -27,8 +27,9 @@ interface SubscriptionData {
     created: string
     product_name: string
   }>
+  monthly_count: number
+  yearly_count: number
 }
-
 
 
 interface Transaction {
@@ -325,6 +326,12 @@ export default function BusinessOverview() {
                 loading={loading.subscriptions}
                 color="green"
                 isEuropeanFormat={true}
+                // Agregar desglose mensual/anual a la derecha
+                subtitle={
+                  subscriptions
+                    ? `Mensual: ${subscriptions.monthly_count || 0} | Anual: ${subscriptions.yearly_count || 0}`
+                    : undefined
+                }
               />
               <MetricCard
                 title="Volumen de ventas neto"
