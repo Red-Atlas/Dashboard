@@ -3,7 +3,7 @@ export async function GET() {
   await new Promise((resolve) => setTimeout(resolve, 100))
 
   return Response.json({
-    value: Math.floor(Math.random() * 500) + 1200,
+    value: 0,
     timestamp: new Date().toISOString(),
   })
 }

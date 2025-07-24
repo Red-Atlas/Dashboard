@@ -11,9 +11,8 @@ export async function GET() {
   } catch (error) {
     console.error('Error en registered-users:', error);
     
-    // Fallback a datos mock en caso de error
     return Response.json({
-      value: Math.floor(Math.random() * 5000) + 25000,
+      value: 0,
       timestamp: new Date().toISOString(),
     });
   }

@@ -14,20 +14,11 @@ export async function GET() {
   } catch (error) {
     console.error('Error en active users 24h:', error);
     
-    // Fallback a datos mock en caso de error
-    const currentUsers = Math.floor(Math.random() * 200) + 150;
-    const previousUsers = Math.floor(Math.random() * 180) + 140;
-    const percentageChange = previousUsers > 0 ? ((currentUsers - previousUsers) / previousUsers) * 100 : 0;
-    
-    let trend: 'up' | 'down' | 'neutral' = 'neutral';
-    if (percentageChange > 5) trend = 'up';
-    else if (percentageChange < -5) trend = 'down';
-    
     return Response.json({
-      value: currentUsers,
-      previousValue: previousUsers,
-      percentageChange: Math.round(percentageChange * 10) / 10,
-      trend,
+      value: 0,
+      previousValue: 0,
+      percentageChange: 0,
+      trend: 'neutral',
       timestamp: new Date().toISOString(),
     });
   }

@@ -7,12 +7,12 @@ const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!, {
 export async function GET() {
   try {
     // Obtener TODAS las suscripciones activas usando paginación
-    let allActiveSubscriptions: any[] = [];
+    let allActiveSubscriptions: Stripe.Subscription[] = [];
     let hasMore = true;
     let startingAfter: string | undefined = undefined;
 
     while (hasMore) {
-      const subscriptionsBatch = await stripe.subscriptions.list({
+      const subscriptionsBatch: Stripe.ApiList<Stripe.Subscription> = await stripe.subscriptions.list({
         status: 'active',
         limit: 100,
         starting_after: startingAfter,

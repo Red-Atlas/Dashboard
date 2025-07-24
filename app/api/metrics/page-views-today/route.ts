@@ -11,9 +11,8 @@ export async function GET() {
   } catch (error) {
     console.error('Error en page-views-yesterday:', error);
     
-    // Fallback a datos mock en caso de error
     return Response.json({
-      value: Math.floor(Math.random() * 3000) + 2000, // Números más realistas para ayer
+      value: 0,
       timestamp: new Date().toISOString(),
     });
   }

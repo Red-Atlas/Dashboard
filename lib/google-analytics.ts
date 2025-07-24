@@ -1,13 +1,26 @@
 import { BetaAnalyticsDataClient } from '@google-analytics/data';
+import fs from 'fs';
 
 // Configuración del cliente de Google Analytics
 let analyticsDataClient: BetaAnalyticsDataClient | null = null;
 
+function ensureGoogleCredentialsFile() {
+  if (process.env.GOOGLE_APPLICATION_CREDENTIALS_BASE64) {
+    const credentialsPath = '/tmp/google-credentials.json';
+    if (!fs.existsSync(credentialsPath)) {
+      const decoded = Buffer.from(process.env.GOOGLE_APPLICATION_CREDENTIALS_BASE64, 'base64').toString('utf-8');
+      fs.writeFileSync(credentialsPath, decoded, { encoding: 'utf-8' });
+    }
+    return credentialsPath;
+  }
+  // fallback: usar GOOGLE_APPLICATION_CREDENTIALS si existe
+  return process.env.GOOGLE_APPLICATION_CREDENTIALS;
+}
+
 export function getAnalyticsClient() {
   if (!analyticsDataClient) {
     analyticsDataClient = new BetaAnalyticsDataClient({
-      // Las credenciales se configurarán desde variables de entorno
-      keyFilename: process.env.GOOGLE_APPLICATION_CREDENTIALS,
+      keyFilename: ensureGoogleCredentialsFile(),
     });
   }
   return analyticsDataClient;
@@ -45,8 +58,7 @@ export async function getActiveUsers() {
     return parseInt(activeUsers);
   } catch (error) {
     console.error('Error al obtener usuarios activos:', error);
-    // Fallback a datos mock en caso de error
-    return Math.floor(Math.random() * 50) + 10;
+    return 0;
   }
 }
 
@@ -100,16 +112,7 @@ export async function getActiveUsersComparison() {
     };
   } catch (error) {
     console.error('Error al obtener comparación de usuarios activos:', error);
-    // Fallback a datos mock con variación realista
-    const currentUsers = Math.floor(Math.random() * 50) + 10;
-    const previousUsers = Math.floor(Math.random() * 40) + 8;
-    const percentageChange = previousUsers > 0 ? ((currentUsers - previousUsers) / previousUsers) * 100 : 0;
-    
-    return {
-      currentUsers,
-      previousUsers,
-      percentageChange: Math.round(percentageChange * 10) / 10,
-    };
+    return { currentUsers: 0, previousUsers: 0, percentageChange: 0 };
   }
 }
 
@@ -136,8 +139,7 @@ export async function getActiveUsersRealtime() {
     return parseInt(activeUsers);
   } catch (error) {
     console.error('Error al obtener usuarios activos en tiempo real:', error);
-    // Fallback a datos mock en caso de error
-    return Math.floor(Math.random() * 10) + 1;
+    return 0;
   }
 }
 
@@ -169,8 +171,7 @@ export async function getRegisteredUsers() {
     return parseInt(totalUsers);
   } catch (error) {
     console.error('Error al obtener usuarios registrados:', error);
-    // Fallback a datos mock en caso de error
-    return Math.floor(Math.random() * 2000) + 24000;
+    return 0;
   }
 }
 
@@ -218,11 +219,7 @@ export async function getPageViewsByHour() {
     return hourlyData;
   } catch (error) {
     console.error('Error al obtener vistas por hora:', error);
-    // Fallback a datos mock
-    return Array.from({ length: 24 }, (_, i) => ({
-      hour: i,
-      views: Math.floor(Math.random() * 1000) + 100,
-    }));
+    return [];
   }
 }
 
@@ -303,24 +300,7 @@ export async function getPageViewsByDay() {
     return dailyData;
   } catch (error) {
     console.error('Error al obtener page views por día:', error);
-    // Fallback a datos mock realistas (6 días pasados + hoy)
-    const mockData = [];
-    for (let i = 6; i >= 0; i--) {
-      const date = new Date();
-      date.setDate(date.getDate() - i);
-      
-      // Para HOY (i=0), usar un número más bajo ya que el día no ha terminado
-      const views = i === 0 
-        ? Math.floor(Math.random() * 3000) + 1000  // HOY: 1000-4000 (día en progreso)
-        : Math.floor(Math.random() * 8000) + 2000; // Días completos: 2000-10000
-        
-      mockData.push({
-        date: date.toLocaleDateString('es-ES', { day: 'numeric', month: 'short' }),
-        views,
-        fullDate: date.toISOString().split('T')[0].replace(/-/g, ''),
-      });
-    }
-    return mockData;
+    return [];
   }
 }
 
@@ -386,15 +366,7 @@ export async function getOperatingSystemData() {
     return osData.slice(0, 6); // Top 6 sistemas operativos
   } catch (error) {
     console.error('Error al obtener datos de sistemas operativos:', error);
-    // Fallback a datos mock
-    return [
-      { os: 'Windows', users: 11000 },
-      { os: 'iOS', users: 6500 },
-      { os: 'Android', users: 5700 },
-      { os: 'Macintosh', users: 392 },
-      { os: 'Linux', users: 119 },
-      { os: 'Chrome OS', users: 62 }
-    ];
+    return [];
   }
 }
 
@@ -461,16 +433,7 @@ export async function getCountryData() {
     return countryData.slice(0, 8); // Top 8 países
   } catch (error) {
     console.error('Error al obtener datos de países:', error);
-    // Fallback a datos mock
-    return [
-      { country: 'Puerto Rico', users: 12000 },
-      { country: 'United States', users: 11000 },
-      { country: 'Netherlands', users: 178 },
-      { country: 'Ireland', users: 157 },
-      { country: 'Colombia', users: 102 },
-      { country: 'Argentina', users: 65 },
-      { country: 'India', users: 51 }
-    ];
+    return [];
   }
 }
 
@@ -503,8 +466,7 @@ export async function getPageViewsToday() {
     return parseInt(views);
   } catch (error) {
     console.error('Error al obtener vistas de hoy:', error);
-    // Fallback a datos mock
-    return Math.floor(Math.random() * 10000) + 5000;
+    return 0;
   }
 }
 
@@ -536,8 +498,7 @@ export async function getPageViewsYesterday() {
     return parseInt(views);
   } catch (error) {
     console.error('Error al obtener vistas de ayer:', error);
-    // Fallback a datos mock realistas (como los de tu GA)
-    return Math.floor(Math.random() * 1000) + 2500; // Entre 2500-3500
+    return 0;
   }
 }
 
@@ -600,21 +561,7 @@ export async function getActiveUsers24Hours() {
     };
   } catch (error) {
     console.error('Error al obtener usuarios activos 24h:', error);
-    // Fallback a datos mock realistas
-    const currentUsers = Math.floor(Math.random() * 200) + 150;
-    const previousUsers = Math.floor(Math.random() * 180) + 140;
-    const percentageChange = previousUsers > 0 ? ((currentUsers - previousUsers) / previousUsers) * 100 : 0;
-    
-    let trend: 'up' | 'down' | 'neutral' = 'neutral';
-    if (percentageChange > 5) trend = 'up';
-    else if (percentageChange < -5) trend = 'down';
-
-    return {
-      value: currentUsers,
-      previousValue: previousUsers,
-      percentageChange: Math.round(percentageChange * 10) / 10,
-      trend
-    };
+    return { value: 0, previousValue: 0, percentageChange: 0, trend: 'neutral' };
   }
 }
 
@@ -677,21 +624,7 @@ export async function getActiveUsers7Days() {
     };
   } catch (error) {
     console.error('Error al obtener usuarios activos 7 días:', error);
-    // Fallback a datos mock realistas
-    const currentUsers = Math.floor(Math.random() * 1000) + 800;
-    const previousUsers = Math.floor(Math.random() * 900) + 750;
-    const percentageChange = previousUsers > 0 ? ((currentUsers - previousUsers) / previousUsers) * 100 : 0;
-    
-    let trend: 'up' | 'down' | 'neutral' = 'neutral';
-    if (percentageChange > 5) trend = 'up';
-    else if (percentageChange < -5) trend = 'down';
-
-    return {
-      value: currentUsers,
-      previousValue: previousUsers,
-      percentageChange: Math.round(percentageChange * 10) / 10,
-      trend
-    };
+    return { value: 0, previousValue: 0, percentageChange: 0, trend: 'neutral' };
   }
 }
 
@@ -754,21 +687,7 @@ export async function getActiveUsersYesterday() {
     };
   } catch (error) {
     console.error('Error al obtener usuarios activos de ayer:', error);
-    // Fallback a datos mock realistas
-    const yesterdayUsers = Math.floor(Math.random() * 150) + 80;
-    const previousDayUsers = Math.floor(Math.random() * 140) + 75;
-    const percentageChange = previousDayUsers > 0 ? ((yesterdayUsers - previousDayUsers) / previousDayUsers) * 100 : 0;
-    
-    let trend: 'up' | 'down' | 'neutral' = 'neutral';
-    if (percentageChange > 5) trend = 'up';
-    else if (percentageChange < -5) trend = 'down';
-
-    return {
-      value: yesterdayUsers,
-      previousValue: previousDayUsers,
-      percentageChange: Math.round(percentageChange * 10) / 10,
-      trend
-    };
+    return { value: 0, previousValue: 0, percentageChange: 0, trend: 'neutral' };
   }
 }
 
@@ -800,7 +719,7 @@ export async function getPageViewsTodayWebOnly() {
     return parseInt(views);
   } catch (error) {
     console.error('Error al obtener page views web:', error);
-    return Math.floor(Math.random() * 8000) + 3000;
+    return 0;
   }
 }
 
@@ -878,17 +797,7 @@ export async function getPageViewsByPath() {
     return pathData.slice(0, 8); // Top 8 páginas
   } catch (error) {
     console.error('Error al obtener page views por ruta:', error);
-    // Fallback a datos mock basados en las capturas
-    return [
-      { path: 'Home', originalPath: '/', views: 38592 },
-      { path: 'home', originalPath: '/home', views: 31074 },
-      { path: 'professional', originalPath: '/professional', views: 17973 },
-      { path: 'signin', originalPath: '/signin', views: 8591 },
-      { path: 'home.html', originalPath: '/home.html', views: 3598 },
-      { path: 'signUp', originalPath: '/signUp', views: 458 },
-      { path: 'deedPull', originalPath: '/deedPull', views: 440 },
-      { path: 'payment', originalPath: '/payment', views: 377 },
-    ];
+    return [];
   }
 }
 
