@@ -11,11 +11,12 @@ function ensureGoogleCredentialsFile() {
       const decoded = Buffer.from(process.env.GOOGLE_APPLICATION_CREDENTIALS_BASE64, 'base64').toString('utf-8');
       fs.writeFileSync(credentialsPath, decoded, { encoding: 'utf-8' });
     }
+    console.log('Usando credenciales de Google en:', credentialsPath);
     return credentialsPath;
   }
-  // fallback: usar GOOGLE_APPLICATION_CREDENTIALS si existe
-  return process.env.GOOGLE_APPLICATION_CREDENTIALS;
 }
+
+
 
 export function getAnalyticsClient() {
   if (!analyticsDataClient) {
