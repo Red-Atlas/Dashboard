@@ -24,13 +24,8 @@ export default function Dashboard() {
   const [isTransitioning, setIsTransitioning] = useState(false)
   const intervalRef = useRef<NodeJS.Timeout | null>(null)
 
-  // Check if already authenticated (session storage)
-  useEffect(() => {
-    const authStatus = sessionStorage.getItem('dashboard-auth')
-    if (authStatus === 'authenticated') {
-      setIsAuthenticated(true)
-    }
-  }, [])
+  // Authentication state only persists while page is loaded (no session storage)
+  // When page reloads, user needs to authenticate again
 
   // Auto-rotation effect - MUST be here before any early returns
   useEffect(() => {
@@ -111,7 +106,7 @@ export default function Dashboard() {
     if (password === process.env.NEXT_PUBLIC_DASHBOARD_PASSWORD) {
       setIsAuthenticated(true)
       setError("")
-      sessionStorage.setItem('dashboard-auth', 'authenticated')
+      // No sessionStorage - authentication only lasts until page reload
     } else {
       setError("Contraseña incorrecta")
       setPassword("")
@@ -120,7 +115,7 @@ export default function Dashboard() {
 
   const handleLogout = () => {
     setIsAuthenticated(false)
-    sessionStorage.removeItem('dashboard-auth')
+    // No need to clear sessionStorage since we don't use it anymore
   }
 
   const renderCurrentScreen = () => {
@@ -201,14 +196,6 @@ export default function Dashboard() {
 
   return (
     <div className="min-h-screen bg-gray-100 overflow-hidden relative">
-      {/* Logout Button */}
-      <button
-        onClick={handleLogout}
-        className="absolute top-4 right-4 z-20 bg-red-600 text-white px-4 py-2 rounded-lg text-sm hover:bg-red-700 transition-colors"
-      >
-        Cerrar Sesión
-      </button>
-
       {/* Left Arrow */}
       <button
         onClick={handlePrevious}

@@ -106,11 +106,10 @@ export default function AdsPerformance() {
   if (loading) {
     return (
       <div className="min-h-screen flex items-center justify-center">
-        <div className="text-2xl text-gray-600">Loading...</div>
+        <div className="text-2xl text-gray-600">Cargando...</div>
       </div>
     )
   }
-
 
 
   return (
@@ -122,7 +121,7 @@ export default function AdsPerformance() {
 
       {/* Títulos en esquina superior derecha */}
       <div className="absolute top-8 right-8 text-right">
-        <p className="text-xl text-gray-600">User Analytics</p>
+        <p className="text-xl text-gray-600">Métricas de usuarios</p>
       </div>
 
               {/* Contenido principal con margen superior para el header */}
@@ -131,42 +130,43 @@ export default function AdsPerformance() {
           <div className="grid grid-cols-3 gap-6 mb-8 max-w-7xl mx-auto">
                                   {/* Active Users 24h */}
             <div className="bg-white rounded-2xl shadow-lg p-6">
-              <div className="flex items-center justify-between mb-4">
-                <div className="text-6xl font-bold text-green-600">{metrics?.activeUsers24h.value ? formatEuropeanInteger(metrics.activeUsers24h.value) : 0}</div>
-                {metrics?.activeUsers24h && (
-                  <div className={`text-sm font-semibold ml-3 ${
+              {metrics?.activeUsers24h && (
+                <div className="flex justify-end mb-2">
+                  <div className={`text-sm font-semibold ${
                     metrics.activeUsers24h.trend === 'up' ? 'text-green-600' : 
                     metrics.activeUsers24h.trend === 'down' ? 'text-red-600' : 'text-gray-600'
                   }`}>
                     {metrics.activeUsers24h.trend === 'up' ? '↗' : 
                      metrics.activeUsers24h.trend === 'down' ? '↘' : '→'} {Math.abs(metrics.activeUsers24h.percentageChange).toFixed(1)}%
+                  </div>
                 </div>
-                )}
-              </div>
-              <div className="text-xl text-gray-700 font-semibold text-center">Usuarios Activos (24 Horas)</div>
-              <div className="text-xs text-gray-500 text-center mt-2">vs 24h anteriores</div>
+              )}
+              <div className="text-6xl font-bold text-green-600 mb-4 text-center">{metrics?.activeUsers24h.value ? formatEuropeanInteger(metrics.activeUsers24h.value) : 0}</div>
+              <div className="text-xl text-gray-700 font-semibold text-center">Usuarios Activos</div>
+              <div className="text-xs text-gray-500 text-center mt-2">Últimas 24 Horas</div>
             </div>
 
             {/* Active Users 7 Days */}
             <div className="bg-white rounded-2xl shadow-lg p-6">
-              <div className="flex items-center justify-between mb-4">
-                <div className="text-6xl font-bold text-gray-900">{metrics?.activeUsers7days.value ? formatEuropeanInteger(metrics.activeUsers7days.value) : 0}</div>
-                {metrics?.activeUsers7days && (
-                  <div className={`text-sm font-semibold ml-3 ${
+              {metrics?.activeUsers7days && (
+                <div className="flex justify-end mb-2">
+                  <div className={`text-sm font-semibold ${
                     metrics.activeUsers7days.trend === 'up' ? 'text-green-600' : 
                     metrics.activeUsers7days.trend === 'down' ? 'text-red-600' : 'text-gray-600'
                   }`}>
                     {metrics.activeUsers7days.trend === 'up' ? '↗' : 
                      metrics.activeUsers7days.trend === 'down' ? '↘' : '→'} {Math.abs(metrics.activeUsers7days.percentageChange).toFixed(1)}%
+                  </div>
                 </div>
-                )}
-              </div>
-              <div className="text-xl text-gray-700 font-semibold text-center">Usuarios Activos (7 Días)</div>
-              <div className="text-xs text-gray-500 text-center mt-2">vs semana anterior</div>
+              )}
+              <div className="text-6xl font-bold text-gray-900 mb-4 text-center">{metrics?.activeUsers7days.value ? formatEuropeanInteger(metrics.activeUsers7days.value) : 0}</div>
+              <div className="text-xl text-gray-700 font-semibold text-center">Usuarios Activos</div>
+              <div className="text-xs text-gray-500 text-center mt-2">Últimos 7 días</div>
             </div>
 
             {/* Registered Users */}
             <div className="bg-white rounded-2xl shadow-lg p-6">
+              <div className="mb-2" style={{ height: '20px' }}></div>
               <div className="text-6xl font-bold text-gray-900 mb-4 text-center">{formatEuropeanInteger(registeredUsers || 0)}</div>
               <div className="text-xl text-gray-700 font-semibold text-center">Usuarios Registrados (Total)</div>
             </div>

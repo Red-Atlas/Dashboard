@@ -35,6 +35,7 @@ interface Transaction {
   amount: number
   email: string
   date: string
+  time?: string
   currency?: string
   status?: string
   customer_name?: string
@@ -275,11 +276,18 @@ export default function BusinessOverview() {
     }
   }, [])
 
-  const formatDate = (dateString: string) => {
+  const formatDateTime = (dateString: string, timeString?: string) => {
     // Parse date string in local timezone to avoid UTC conversion issues
     const [year, month, day] = dateString.split('-').map(Number);
     const date = new Date(year, month - 1, day); // month is 0-indexed
-    return date.toLocaleDateString("en-US", { month: "short", day: "numeric" })
+    const formattedDate = date.toLocaleDateString("en-US", { month: "short", day: "numeric" })
+    
+    // If time is available, include it
+    if (timeString) {
+      return `${formattedDate} • ${timeString}`
+    }
+    
+    return formattedDate
   }
 
   return (
@@ -291,7 +299,7 @@ export default function BusinessOverview() {
 
       {/* Títulos en esquina superior derecha */}
       <div className="absolute top-8 right-8 text-right">
-        <p className="text-xl text-gray-600">Business Overview</p>
+        <p className="text-xl text-gray-600">Resumen comercial</p>
       </div>
 
       {/* Contenido principal con margen superior para el header */}
@@ -303,10 +311,10 @@ export default function BusinessOverview() {
             {/* Metrics Grid */}
             <div className="grid grid-cols-2 gap-6">
               <MetricCard
-                title="Usuarios Activos (Últimos 30 minutos)"
+                title="Usuarios Activos"
                 value={metrics.activeUsers}
                 loading={loading.activeUsers}
-                subtitle="vs 30 minutes ago"
+                subtitle="Últimos 30 minutos"
                 color="green"
                 isEuropeanFormat={true}
                 percentageChange={metrics.activeUsersPercentageChange}
@@ -322,7 +330,7 @@ export default function BusinessOverview() {
                 title="Volumen de ventas neto"
                 value={revenueMetrics.totalRevenue}
                 loading={loading.revenue}
-                subtitle={`Gross: $${revenueMetrics.grossRevenue ? formatEuropeanNumber(revenueMetrics.grossRevenue) : '0,00'} • Últimas 4 semanas`}
+                subtitle="Últimas 4 semanas"
                 color="green"
                 isCurrency={true}
                 percentageChange={revenueMetrics.percentageChange}
@@ -348,7 +356,7 @@ export default function BusinessOverview() {
               ) : (
                 <>
                   <div className="text-5xl font-bold text-gray-900 mb-2">{formatEuropeanInteger(metrics.pageViewsYesterday)}</div>
-                  <div className="text-lg text-gray-700 mb-6">Páginas vistas (Ayer)</div>
+                  <div className="text-lg text-gray-700 mb-6">Páginas vistas</div>
 
                   {metrics.pageViewsByDay.length > 0 && (
                     <div className="h-64 -mx-2">
@@ -465,7 +473,7 @@ export default function BusinessOverview() {
                           <div className="text-xs text-gray-400 truncate">{transaction.email}</div>
                         )}
                       </div>
-                      <div className="text-sm text-gray-500 ml-4 flex-shrink-0">{formatDate(transaction.date)}</div>
+                      <div className="text-xs text-gray-500 ml-4 flex-shrink-0 text-right min-w-[120px]">{formatDateTime(transaction.date, transaction.time)}</div>
                     </div>
                   ))}
                 </div>
@@ -477,13 +485,9 @@ export default function BusinessOverview() {
 
 
         {/* Footer */}
-        <div className="flex justify-between items-center mt-8">
-          <div className="text-sm text-gray-500">
-            <div>🔄 Auto-actualización cada 5 minutos</div>
-            
-          </div>
+        <div className="flex justify-end items-center mt-8">
           <div className="text-gray-500">
-            Last updated:{" "}
+            Última actualización:{" "}
             {lastUpdated.toLocaleTimeString("en-US", {
               hour: "2-digit",
               minute: "2-digit",

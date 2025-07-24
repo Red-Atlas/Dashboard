@@ -61,6 +61,14 @@ export async function GET() {
           day: '2-digit'
         });
         
+        // Get time in Puerto Rico timezone
+        const puertoRicoTime = utcDate.toLocaleTimeString('en-US', {
+          timeZone: 'America/Puerto_Rico',
+          hour: '2-digit',
+          minute: '2-digit',
+          hour12: true
+        });
+        
         // Convert MM/DD/YYYY to YYYY-MM-DD format
         const [month, day, year] = puertoRicoDate.split('/');
         const dateString = `${year}-${month.padStart(2, '0')}-${day.padStart(2, '0')}`;
@@ -70,6 +78,7 @@ export async function GET() {
           email: customerEmail || 'No email available',
           customer_name: customerName || null,
           date: dateString, // Date in Puerto Rico timezone
+          time: puertoRicoTime, // Time in Puerto Rico timezone
           currency: charge.currency.toUpperCase(),
           status: charge.status,
         }
