@@ -141,7 +141,7 @@ export async function getActiveUsersRealtime() {
   }
 }
 
-// Función para obtener usuarios registrados (usando eventos personalizados)
+// Función para obtener usuarios registrados (últimos 28 días completos)
 export async function getRegisteredUsers() {
   try {
     const client = getAnalyticsClient();
@@ -154,13 +154,13 @@ export async function getRegisteredUsers() {
       property: `properties/${GA_PROPERTY_ID}`,
       dateRanges: [
         {
-          startDate: '30daysAgo',
-          endDate: 'today',
+          startDate: '28daysAgo',
+          endDate: 'yesterday',
         },
       ],
       metrics: [
         {
-          name: 'totalUsers',
+          name: 'activeUsers',
         },
       ],
     });
@@ -170,7 +170,7 @@ export async function getRegisteredUsers() {
   } catch (error) {
     console.error('Error al obtener usuarios registrados:', error);
     // Fallback a datos mock en caso de error
-    return Math.floor(Math.random() * 5000) + 25000;
+    return Math.floor(Math.random() * 2000) + 24000;
   }
 }
 
