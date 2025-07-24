@@ -5,7 +5,7 @@ import { useState, useEffect } from "react"
 import Image from "next/image"
 
 interface UserMetrics {
-  activeUsers24h: {
+  activeUsersYesterday: {
     value: number
     previousValue: number
     percentageChange: number
@@ -59,8 +59,8 @@ export default function AdsPerformance() {
 
   const fetchMetrics = async () => {
     try {
-      const [activeUsers24h, activeUsers7days, registeredUsersData, devicesData, geoData] = await Promise.all([
-        fetch("/api/metrics/active-users-24h").then((r) => r.json()),
+      const [activeUsersYesterday, activeUsers7days, registeredUsersData, devicesData, geoData] = await Promise.all([
+        fetch("/api/metrics/active-users-yesterday").then((r) => r.json()),
         fetch("/api/metrics/active-users-7days").then((r) => r.json()),
         fetch("/api/metrics/registered-users").then((r) => r.json()),
         fetch("/api/metrics/device-breakdown").then((r) => r.json()),
@@ -68,11 +68,11 @@ export default function AdsPerformance() {
       ])
 
       setMetrics({
-        activeUsers24h: {
-          value: activeUsers24h.value,
-          previousValue: activeUsers24h.previousValue,
-          percentageChange: activeUsers24h.percentageChange,
-          trend: activeUsers24h.trend
+        activeUsersYesterday: {
+          value: activeUsersYesterday.value,
+          previousValue: activeUsersYesterday.previousValue,
+          percentageChange: activeUsersYesterday.percentageChange,
+          trend: activeUsersYesterday.trend
         },
         activeUsers7days: {
           value: activeUsers7days.value,
@@ -128,22 +128,22 @@ export default function AdsPerformance() {
         <div className="mt-24 px-8">
           {/* Top Metrics - 3 cards principales */}
           <div className="grid grid-cols-3 gap-6 mb-8 max-w-7xl mx-auto">
-                                  {/* Active Users 24h */}
+                                  {/* Active Users Yesterday */}
             <div className="bg-white rounded-2xl shadow-lg p-6">
-              {metrics?.activeUsers24h && (
+              {metrics?.activeUsersYesterday && (
                 <div className="flex justify-end mb-2">
                   <div className={`text-sm font-semibold ${
-                    metrics.activeUsers24h.trend === 'up' ? 'text-green-600' : 
-                    metrics.activeUsers24h.trend === 'down' ? 'text-red-600' : 'text-gray-600'
+                    metrics.activeUsersYesterday.trend === 'up' ? 'text-green-600' : 
+                    metrics.activeUsersYesterday.trend === 'down' ? 'text-red-600' : 'text-gray-600'
                   }`}>
-                    {metrics.activeUsers24h.trend === 'up' ? '↗' : 
-                     metrics.activeUsers24h.trend === 'down' ? '↘' : '→'} {Math.abs(metrics.activeUsers24h.percentageChange).toFixed(1)}%
+                    {metrics.activeUsersYesterday.trend === 'up' ? '↗' : 
+                     metrics.activeUsersYesterday.trend === 'down' ? '↘' : '→'} {Math.abs(metrics.activeUsersYesterday.percentageChange).toFixed(1)}%
                   </div>
                 </div>
               )}
-              <div className="text-6xl font-bold text-green-600 mb-4 text-center">{metrics?.activeUsers24h.value ? formatEuropeanInteger(metrics.activeUsers24h.value) : 0}</div>
+              <div className="text-6xl font-bold text-green-600 mb-4 text-center">{metrics?.activeUsersYesterday.value ? formatEuropeanInteger(metrics.activeUsersYesterday.value) : 0}</div>
               <div className="text-xl text-gray-700 font-semibold text-center">Usuarios Activos</div>
-              <div className="text-xs text-gray-500 text-center mt-2">Últimas 24 Horas</div>
+              <div className="text-xs text-gray-500 text-center mt-2">Ayer (acumulados)</div>
             </div>
 
             {/* Active Users 7 Days */}
