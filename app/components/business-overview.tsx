@@ -66,6 +66,7 @@ interface MetricCardProps {
   isCurrency?: boolean
   isEuropeanFormat?: boolean
   percentageChange?: number
+  externalNote?: string
 }
 
 // Helper function for American number formatting (thousands with , and decimals with .)
@@ -81,7 +82,7 @@ const formatEuropeanInteger = (val: number) => {
   return val.toString().replace(/\B(?=(\d{3})+(?!\d))/g, ',')
 }
 
-function MetricCard({ title, value, loading, subtitle, color = "gray", isCurrency = false, isEuropeanFormat = false, percentageChange }: MetricCardProps) {
+function MetricCard({ title, value, loading, subtitle, color = "gray", isCurrency = false, isEuropeanFormat = false, percentageChange, externalNote }: MetricCardProps) {
   const textColor = color === "green" ? "text-green-600" : "text-gray-900"
   
   const formatValue = (val: number | null) => {
@@ -125,6 +126,12 @@ function MetricCard({ title, value, loading, subtitle, color = "gray", isCurrenc
           </div>
           <div className="text-lg text-gray-700">{title}</div>
           {subtitle && <div className="text-xs text-gray-500 absolute bottom-4 right-6">{subtitle}</div>}
+          {externalNote && title === "Volumen de ventas neto" && (
+            <div className="text-xs text-gray-500 absolute top-4 right-6">{externalNote}</div>
+          )}
+          {externalNote && title === "Suscripciones Activas" && (
+            <div className="text-xs text-gray-500 absolute top-4 right-6">({externalNote})</div>
+          )}
         </>
       )}
     </div>
@@ -328,7 +335,7 @@ export default function BusinessOverview() {
               />
               <MetricCard
                 title="Suscripciones Activas"
-                value={subscriptions?.active_count || 0}
+                value={(subscriptions?.active_count || 0) + 15}
                 loading={loading.subscriptions}
                 color="green"
                 isEuropeanFormat={true}
@@ -338,15 +345,19 @@ export default function BusinessOverview() {
                     ? `Mensual: ${subscriptions.monthly_count || 0} | Anual: ${subscriptions.yearly_count || 0}`
                     : undefined
                 }
+                // Agregar aclaración de suscripciones externas
+                externalNote="15 externas"
               />
               <MetricCard
                 title="Volumen de ventas neto"
-                value={revenueMetrics.totalRevenue}
+                value={(revenueMetrics.totalRevenue || 0) + 3000}
                 loading={loading.revenue}
                 subtitle="Últimas 4 semanas"
                 color="green"
                 isCurrency={true}
                 percentageChange={revenueMetrics.percentageChange}
+                // Agregar aclaración de ventas externas
+                externalNote="Ventas externas: $3,000"
               />
               <MetricCard
                 title="Transacciones exitosas"
