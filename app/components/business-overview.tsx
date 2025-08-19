@@ -167,6 +167,20 @@ export default function BusinessOverview() {
     subscriptions: true,
   })
   const [lastUpdated, setLastUpdated] = useState<Date>(new Date())
+  const [previousTransactionCount, setPreviousTransactionCount] = useState<number>(0)
+
+  // Función para reproducir sonido de notificación
+  const playNotificationSound = () => {
+    try {
+      const audio = new Audio('/sounds/notification.mp3')
+      audio.volume = 0.5 // Volumen al 50%
+      audio.play().catch(error => {
+        console.log('No se pudo reproducir el sonido:', error)
+      })
+    } catch (error) {
+      console.log('Error al reproducir sonido:', error)
+    }
+  }
 
   const fetchActiveUsers = async () => {
     setLoading((prev) => ({ ...prev, activeUsers: true }))
@@ -226,8 +240,31 @@ export default function BusinessOverview() {
       console.log('Transactions API response:', data);
       console.log('Is array?', Array.isArray(data));
       console.log('Length:', Array.isArray(data) ? data.length : 'Not an array');
+      
       // Asegurar que data sea un array
-      setTransactions(Array.isArray(data) ? data : [])
+      const newTransactions = Array.isArray(data) ? data : []
+      
+      // Detectar si hay nuevas transacciones comparando IDs o fechas
+      if (newTransactions.length > 0 && transactions.length > 0) {
+        // Comparar la primera transacción (más reciente) con la anterior
+        const latestNewTransaction = newTransactions[0];
+        const latestCurrentTransaction = transactions[0];
+        
+        // Si las fechas son diferentes, es una nueva transacción
+        if (latestNewTransaction.date !== latestCurrentTransaction.date || 
+            latestNewTransaction.time !== latestCurrentTransaction.time) {
+          console.log('¡Nueva transacción detectada! Reproduciendo sonido...')
+          console.log('Nueva transacción:', latestNewTransaction)
+          playNotificationSound()
+        }
+      } else if (newTransactions.length > previousTransactionCount && previousTransactionCount > 0) {
+        // Fallback: si no hay transacciones previas, usar el conteo
+        console.log('¡Nueva transacción detectada! Reproduciendo sonido...')
+        playNotificationSound()
+      }
+      
+      setPreviousTransactionCount(newTransactions.length)
+      setTransactions(newTransactions)
     } catch (error) {
       console.error("Failed to fetch transactions:", error)
       setTransactions([]) // En caso de error, establecer array vacío
