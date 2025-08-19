@@ -168,6 +168,8 @@ export default function BusinessOverview() {
   })
   const [lastUpdated, setLastUpdated] = useState<Date>(new Date())
   const [previousTransactionCount, setPreviousTransactionCount] = useState<number>(0)
+  const [lastTransactionTime, setLastTransactionTime] = useState<Date>(new Date())
+  const [cricketsPlayed, setCricketsPlayed] = useState<boolean>(false)
 
   // Función para reproducir sonido de notificación
   const playNotificationSound = () => {
@@ -179,6 +181,19 @@ export default function BusinessOverview() {
       })
     } catch (error) {
       console.log('Error al reproducir sonido:', error)
+    }
+  }
+
+  // Función para reproducir sonido de grillos (inactividad)
+  const playCricketsSound = () => {
+    try {
+      const audio = new Audio('/sounds/crickets.mp3')
+      audio.volume = 0.3 // Volumen más bajo para los grillos
+      audio.play().catch(error => {
+        console.log('No se pudo reproducir el sonido de grillos:', error)
+      })
+    } catch (error) {
+      console.log('Error al reproducir sonido de grillos:', error)
     }
   }
 
@@ -256,11 +271,15 @@ export default function BusinessOverview() {
           console.log('¡Nueva transacción detectada! Reproduciendo sonido...')
           console.log('Nueva transacción:', latestNewTransaction)
           playNotificationSound()
+          setLastTransactionTime(new Date()) // Actualizar tiempo de última transacción
+          setCricketsPlayed(false) // Resetear estado de grillos
         }
       } else if (newTransactions.length > previousTransactionCount && previousTransactionCount > 0) {
         // Fallback: si no hay transacciones previas, usar el conteo
         console.log('¡Nueva transacción detectada! Reproduciendo sonido...')
         playNotificationSound()
+        setLastTransactionTime(new Date()) // Actualizar tiempo de última transacción
+        setCricketsPlayed(false) // Resetear estado de grillos
       }
       
       setPreviousTransactionCount(newTransactions.length)
@@ -326,6 +345,31 @@ export default function BusinessOverview() {
       clearInterval(generalInterval)
     }
   }, [])
+
+  // Verificar inactividad cada hora
+  useEffect(() => {
+    const checkInactivity = () => {
+      const now = new Date()
+      const timeSinceLastTransaction = now.getTime() - lastTransactionTime.getTime()
+      const fourHoursInMs = 4 * 60 * 60 * 1000 // 4 horas en milisegundos
+      
+      if (timeSinceLastTransaction >= fourHoursInMs && !cricketsPlayed) {
+        console.log('🦗 Han pasado 4 horas sin transacciones. Reproduciendo sonido de grillos...')
+        playCricketsSound()
+        setCricketsPlayed(true)
+      }
+    }
+
+    // Verificar cada hora
+    const inactivityInterval = setInterval(checkInactivity, 60 * 60 * 1000) // 1 hora
+
+    // Verificar inmediatamente al cargar
+    checkInactivity()
+
+    return () => {
+      clearInterval(inactivityInterval)
+    }
+  }, [lastTransactionTime, cricketsPlayed])
 
   const formatDateTime = (dateString: string, timeString?: string) => {
     // Parse date string in local timezone to avoid UTC conversion issues

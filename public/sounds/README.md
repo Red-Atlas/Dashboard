@@ -1,26 +1,35 @@
 # Sonidos de Notificación
 
-## Cómo agregar el sonido de notificación:
+## Cómo agregar los sonidos de notificación:
 
-1. **Descarga un sonido de notificación** (formato MP3):
-   - Puedes usar sitios como: https://notificationsounds.com/
-   - O buscar "notification sound mp3" en Google
-   - Recomendado: sonido corto (1-3 segundos) y profesional
+### 1. Sonido de Nueva Transacción (`notification.mp3`):
+- **Descarga un sonido de notificación** (formato MP3):
+  - Puedes usar sitios como: https://notificationsounds.com/
+  - O buscar "notification sound mp3" en Google
+  - Recomendado: sonido corto (1-3 segundos) y profesional
 
-2. **Renombra el archivo** a `notification.mp3`
+- **Renombra el archivo** a `notification.mp3`
+- **Colócalo en esta carpeta** (`public/sounds/notification.mp3`)
 
-3. **Colócalo en esta carpeta** (`public/sounds/notification.mp3`)
+### 2. Sonido de Inactividad (`crickets.mp3`):
+- **Descarga un sonido de grillos/silencio** (formato MP3):
+  - Puedes buscar "crickets sound mp3" o "silence sound mp3"
+  - Recomendado: sonido de grillos o silencio (2-5 segundos)
+  - Sitios recomendados: https://freesound.org/search/?q=crickets
 
-## Características recomendadas del sonido:
-- Duración: 1-3 segundos
-- Formato: MP3
-- Volumen: Moderado (no muy fuerte)
-- Tono: Profesional y agradable
+- **Renombra el archivo** a `crickets.mp3`
+- **Colócalo en esta carpeta** (`public/sounds/crickets.mp3`)
+
+## Características recomendadas de los sonidos:
+- **notification.mp3**: Duración 1-3 segundos, tono profesional y agradable
+- **crickets.mp3**: Duración 2-5 segundos, sonido de grillos o silencio
 
 ## Ejemplo de URLs para descargar sonidos:
 - https://notificationsounds.com/notification-sounds
 - https://mixkit.co/free-sound-effects/notification/
 - https://freesound.org/search/?q=notification
+- https://freesound.org/search/?q=crickets
 
 ## Nota:
-El sonido se reproducirá automáticamente cuando se detecte una nueva transacción en el dashboard.
+- `notification.mp3` se reproduce cuando llega una nueva transacción
+- `crickets.mp3` se reproduce cuando pasan 4 horas sin nuevas transacciones
