@@ -27,30 +27,31 @@ export default function Dashboard() {
   // Authentication state only persists while page is loaded (no session storage)
   // When page reloads, user needs to authenticate again
 
-  // Auto-rotation effect - MUST be here before any early returns
+  // Auto-rotation effect - PAUSED - only showing business screen
   useEffect(() => {
-    if (!isAuthenticated) return // Don't run if not authenticated
+    // Temporarily disabled auto-rotation
+    // if (!isAuthenticated) return // Don't run if not authenticated
 
-    const rotateScreen = () => {
-      if (!isTransitioning) {
-        const nextScreen = getNextScreen(currentScreen)
-        navigateToScreen(nextScreen)
-      }
-    }
+    // const rotateScreen = () => {
+    //   if (!isTransitioning) {
+    //     const nextScreen = getNextScreen(currentScreen)
+    //     navigateToScreen(nextScreen)
+    //   }
+    // }
 
-    // Clear existing interval
-    if (intervalRef.current) {
-      clearInterval(intervalRef.current)
-    }
+    // // Clear existing interval
+    // if (intervalRef.current) {
+    //   clearInterval(intervalRef.current)
+    // }
 
-    // Set new interval
-    intervalRef.current = setInterval(rotateScreen, SCREEN_DURATIONS[currentScreen])
+    // // Set new interval
+    // intervalRef.current = setInterval(rotateScreen, SCREEN_DURATIONS[currentScreen])
 
-    return () => {
-      if (intervalRef.current) {
-        clearInterval(intervalRef.current)
-      }
-    }
+    // return () => {
+    //   if (intervalRef.current) {
+    //     clearInterval(intervalRef.current)
+    //   }
+    // }
   }, [currentScreen, isTransitioning, isAuthenticated])
 
   const getNextScreen = (current: Screen): Screen => {

@@ -40,6 +40,7 @@ interface Transaction {
   currency?: string
   status?: string
   customer_name?: string
+  coupon_name?: string
 }
 
 interface RevenueMetrics {
@@ -215,9 +216,14 @@ export default function BusinessOverview() {
     try {
       const response = await fetch("/api/metrics/stripe-transactions")
       const data = await response.json()
-      setTransactions(data)
+      console.log('Transactions API response:', data);
+      console.log('Is array?', Array.isArray(data));
+      console.log('Length:', Array.isArray(data) ? data.length : 'Not an array');
+      // Asegurar que data sea un array
+      setTransactions(Array.isArray(data) ? data : [])
     } catch (error) {
       console.error("Failed to fetch transactions:", error)
+      setTransactions([]) // En caso de error, establecer array vacío
     } finally {
       setLoading((prev) => ({ ...prev, transactions: false }))
     }
@@ -454,7 +460,7 @@ export default function BusinessOverview() {
                 </div>
               ) : (
                 <div className="space-y-3 flex-1 overflow-hidden">
-                  {transactions.slice(0, 7).map((transaction, index) => (
+                  {(Array.isArray(transactions) ? transactions : []).slice(0, 7).map((transaction, index) => (
                     <div
                       key={index}
                       className="flex justify-between items-center py-3 border-b border-gray-100 last:border-b-0"
@@ -485,7 +491,24 @@ export default function BusinessOverview() {
                           <div className="text-xs text-gray-400 truncate">{transaction.email}</div>
                         )}
                       </div>
-                      <div className="text-xs text-gray-500 ml-4 flex-shrink-0 text-right min-w-[120px]">{formatDateTime(transaction.date, transaction.time)}</div>
+                      <div className="flex flex-col items-end text-sm text-gray-500 ml-4 flex-shrink-0">
+                        <div className="flex items-center gap-3 text-sm text-gray-500 ml-4 flex-shrink-0">
+                          <div className="flex flex-col items-center">
+                            <span className="font-semibold text-gray-700 text-xs">Cupón:</span>
+                            {transaction.coupon_name ? (
+                              <span className="font-bold text-blue-600 text-xs">
+                                {transaction.coupon_name}
+                              </span>
+                            ) : (
+                              <span className="text-gray-400 text-xs">—</span> // Simple dash instead of line
+                            )}
+                          </div>
+                          <span>•</span>
+                          <span>
+                            {formatDateTime(transaction.date, transaction.time)}
+                          </span>
+                        </div>
+                      </div>
                     </div>
                   ))}
                 </div>
