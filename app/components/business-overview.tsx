@@ -67,6 +67,7 @@ interface MetricCardProps {
   isEuropeanFormat?: boolean
   percentageChange?: number
   externalNote?: string
+  goal?: number
 }
 
 // Helper function for American number formatting (thousands with , and decimals with .)
@@ -82,7 +83,7 @@ const formatEuropeanInteger = (val: number) => {
   return val.toString().replace(/\B(?=(\d{3})+(?!\d))/g, ',')
 }
 
-function MetricCard({ title, value, loading, subtitle, color = "gray", isCurrency = false, isEuropeanFormat = false, percentageChange, externalNote }: MetricCardProps) {
+function MetricCard({ title, value, loading, subtitle, color = "gray", isCurrency = false, isEuropeanFormat = false, percentageChange, externalNote, goal }: MetricCardProps) {
   const textColor = color === "green" ? "text-green-600" : "text-gray-900"
   
   const formatValue = (val: number | null) => {
@@ -122,6 +123,11 @@ function MetricCard({ title, value, loading, subtitle, color = "gray", isCurrenc
         <>
           <div className={`text-5xl font-bold ${textColor} mb-2 flex items-center`}>
             {formatValue(value)}
+            {goal && (
+              <span className="text-lg font-normal text-gray-500 ml-2">
+                (meta: {formatEuropeanInteger(goal)})
+              </span>
+            )}
             {percentageChange !== undefined && formatPercentageChange(percentageChange)}
           </div>
           <div className="text-lg text-gray-700">{title}</div>
@@ -454,6 +460,7 @@ export default function BusinessOverview() {
                 }
                 // Agregar aclaración de suscripciones externas
                 externalNote="15 externas"
+                goal={1000}
               />
               <MetricCard
                 title="Volumen de ventas neto"
@@ -488,7 +495,9 @@ export default function BusinessOverview() {
                 <>
                   <div className="text-5xl font-bold text-gray-900 mb-2">{formatEuropeanInteger(metrics.pageViewsYesterday)}</div>
                   <div className="text-lg text-gray-700 mb-2">Páginas vistas</div>
-                  <div className="text-sm text-gray-500 mb-4">Últimos 7 días</div>
+                  <div className="text-sm text-gray-500 mb-4">
+                    Últimos 7 días • Total: {formatEuropeanInteger(metrics.pageViewsByDay.slice(-7).reduce((sum, day) => sum + day.views, 0))}
+                  </div>
 
                   {metrics.pageViewsByDay.length > 0 && (
                     <div className="h-64 -mx-2">
