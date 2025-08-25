@@ -170,6 +170,7 @@ export default function BusinessOverview() {
   const [previousTransactionCount, setPreviousTransactionCount] = useState<number>(0)
   const [lastTransactionTime, setLastTransactionTime] = useState<Date>(new Date())
   const [cricketsPlayed, setCricketsPlayed] = useState<boolean>(false)
+  const [previousSubscriptionCount, setPreviousSubscriptionCount] = useState<number>(0)
 
   // Función para reproducir sonido de notificación
   const playNotificationSound = () => {
@@ -194,6 +195,19 @@ export default function BusinessOverview() {
       })
     } catch (error) {
       console.log('Error al reproducir sonido de grillos:', error)
+    }
+  }
+
+  // Función para reproducir sonido de fallo (pérdida de suscripción)
+  const playFailSound = () => {
+    try {
+      const audio = new Audio('/sounds/fail.mp3')
+      audio.volume = 0.4 // Volumen al 40%
+      audio.play().catch(error => {
+        console.log('No se pudo reproducir el sonido de fallo:', error)
+      })
+    } catch (error) {
+      console.log('Error al reproducir sonido de fallo:', error)
     }
   }
 
@@ -273,6 +287,7 @@ export default function BusinessOverview() {
           playNotificationSound()
           setLastTransactionTime(new Date()) // Actualizar tiempo de última transacción
           setCricketsPlayed(false) // Resetear estado de grillos
+          console.log('🔄 Contador de 30 minutos reiniciado - Los grillos pueden volver a sonar después de 30 minutos de inactividad')
         }
       } else if (newTransactions.length > previousTransactionCount && previousTransactionCount > 0) {
         // Fallback: si no hay transacciones previas, usar el conteo
@@ -280,6 +295,7 @@ export default function BusinessOverview() {
         playNotificationSound()
         setLastTransactionTime(new Date()) // Actualizar tiempo de última transacción
         setCricketsPlayed(false) // Resetear estado de grillos
+        console.log('🔄 Contador de 30 minutos reiniciado - Los grillos pueden volver a sonar después de 30 minutos de inactividad')
       }
       
       setPreviousTransactionCount(newTransactions.length)
@@ -310,6 +326,16 @@ export default function BusinessOverview() {
     try {
       const response = await fetch("/api/metrics/stripe-subscriptions")
       const data = await response.json()
+      
+      // Detectar si bajó una suscripción
+      const currentSubscriptionCount = data.active_count || 0
+      if (previousSubscriptionCount > 0 && currentSubscriptionCount < previousSubscriptionCount) {
+        const lostSubscriptions = previousSubscriptionCount - currentSubscriptionCount
+        console.log(`❌ Se perdieron ${lostSubscriptions} suscripción(es). Reproduciendo sonido de fallo...`)
+        playFailSound()
+      }
+      
+      setPreviousSubscriptionCount(currentSubscriptionCount)
       setSubscriptions(data)
     } catch (error) {
       console.error("Failed to fetch subscriptions:", error)
@@ -351,17 +377,17 @@ export default function BusinessOverview() {
     const checkInactivity = () => {
       const now = new Date()
       const timeSinceLastTransaction = now.getTime() - lastTransactionTime.getTime()
-      const fourHoursInMs = 4 * 60 * 60 * 1000 // 4 horas en milisegundos
+      const thirtyMinutesInMs = 30 * 60 * 1000 // 30 minutos en milisegundos
       
-      if (timeSinceLastTransaction >= fourHoursInMs && !cricketsPlayed) {
-        console.log('🦗 Han pasado 4 horas sin transacciones. Reproduciendo sonido de grillos...')
+      if (timeSinceLastTransaction >= thirtyMinutesInMs && !cricketsPlayed) {
+        console.log('🦗 Han pasado 30 minutos sin transacciones. Reproduciendo sonido de grillos...')
         playCricketsSound()
         setCricketsPlayed(true)
       }
     }
 
-    // Verificar cada hora
-    const inactivityInterval = setInterval(checkInactivity, 60 * 60 * 1000) // 1 hora
+    // Verificar cada 30 minutos
+    const inactivityInterval = setInterval(checkInactivity, 30 * 60 * 1000) // 30 minutos
 
     // Verificar inmediatamente al cargar
     checkInactivity()

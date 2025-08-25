@@ -17,7 +17,6 @@ function ensureGoogleCredentialsFile() {
 }
 
 
-
 export function getAnalyticsClient() {
   if (!analyticsDataClient) {
     analyticsDataClient = new BetaAnalyticsDataClient({
