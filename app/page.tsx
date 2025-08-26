@@ -9,19 +9,18 @@ import { ChevronLeft, ChevronRight } from "lucide-react"
 import { Button } from "@/components/ui/button"
 
 export default function Home() {
-  const [currentScreen, setCurrentScreen] = useState(3) // Start with goals screen (index 3)
-  const [autoPlay, setAutoPlay] = useState(false) // Disable auto-play by default
+  const [currentScreen, setCurrentScreen] = useState(0) // Start with first screen
+  const [autoPlay, setAutoPlay] = useState(true) // Enable auto-play by default
   
   const screens = [
-    <BusinessOverview key="business" />,
-    <AdsPerformance key="ads" />,
-    <BrandingSlide key="branding" />,
-    <GoalsScreen key="goals" />
+    <BusinessOverview key="business" />, // 1. Stripe y métricas de negocio
+    <AdsPerformance key="ads" />,        // 2. Google Analytics
+    <GoalsScreen key="goals" />,         // 3. Metas
+    <BrandingSlide key="branding" />     // 4. Red Atlas
   ]
 
-  // For now, only show goals screen
-  const enabledScreens = [3] // Only goals screen
-  const currentEnabledScreen = enabledScreens[0]
+  // All screens enabled in the correct order
+  const enabledScreens = [0, 1, 2, 3] // All screens: Stripe, Analytics, Goals, Red Atlas
 
   useEffect(() => {
     if (!autoPlay) return
