@@ -155,11 +155,6 @@ export default function GoalsScreen() {
           <Image src="/red-atlas-logo.png" alt="RED Atlas Logo" width={200} height={60} className="h-16 w-auto" />
         </div>
 
-        {/* Title */}
-        <div className="absolute top-8 right-8 text-right">
-          <p className="text-xl text-gray-600">Metas del negocio</p>
-        </div>
-
         {/* Loading Content */}
         <div className="mt-24">
           <div className="max-w-6xl mx-auto">
@@ -186,19 +181,20 @@ export default function GoalsScreen() {
         <Image src="/red-atlas-logo.png" alt="RED Atlas Logo" width={200} height={60} className="h-16 w-auto" />
       </div>
 
-      {/* Title */}
-      <div className="absolute top-8 right-8 text-right">
-        <p className="text-xl text-gray-600">Metas del negocio</p>
-      </div>
-
       {/* Content */}
       <div className="mt-24">
         <div className="max-w-6xl mx-auto">
+          {/* Main Title */}
+          <div className="text-center mb-12">
+            <h1 className="text-4xl font-bold text-gray-900 mb-2">Metas para el 31 de Diciembre</h1>
+            <p className="text-lg text-gray-600">Objetivos del negocio 2024</p>
+          </div>
+
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
             <GoalCard
               title="Usuarios Registrados"
               current={goalsData.registeredUsers}
-              target={30000}
+              target={42000}
               format="number"
               color="blue"
             />
@@ -206,7 +202,7 @@ export default function GoalsScreen() {
             <GoalCard
               title="Suscripciones Pagas"
               current={goalsData.paidSubscriptions}
-              target={1000}
+              target={450}
               format="number"
               color="green"
             />
@@ -214,7 +210,7 @@ export default function GoalsScreen() {
             <GoalCard
               title="Page Views (7 días)"
               current={goalsData.pageViews}
-              target={50000} // You can adjust this target
+              target={1000000}
               format="number"
               color="red"
             />
@@ -222,7 +218,7 @@ export default function GoalsScreen() {
             <GoalCard
               title="Volumen de Ventas Neto"
               current={goalsData.netRevenue}
-              target={20000}
+              target={50000}
               format="currency"
               color="green"
             />
@@ -230,7 +226,7 @@ export default function GoalsScreen() {
             <GoalCard
               title="Cupones de Danny"
               current={goalsData.dannyCoupons}
-              target={500}
+              target={200}
               format="number"
               color="blue"
             />
@@ -242,25 +238,25 @@ export default function GoalsScreen() {
             <div className="grid grid-cols-2 md:grid-cols-4 gap-6">
               <div className="text-center">
                 <div className="text-3xl font-bold text-blue-600">
-                  {((goalsData.registeredUsers / 30000) * 100).toFixed(1)}%
+                  {((goalsData.registeredUsers / 42000) * 100).toFixed(1)}%
                 </div>
                 <div className="text-sm text-gray-600">Usuarios Registrados</div>
               </div>
               <div className="text-center">
                 <div className="text-3xl font-bold text-green-600">
-                  {((goalsData.paidSubscriptions / 1000) * 100).toFixed(1)}%
+                  {((goalsData.paidSubscriptions / 450) * 100).toFixed(1)}%
                 </div>
                 <div className="text-sm text-gray-600">Suscripciones</div>
               </div>
               <div className="text-center">
                 <div className="text-3xl font-bold text-red-600">
-                  {((goalsData.netRevenue / 20000) * 100).toFixed(1)}%
+                  {((goalsData.netRevenue / 50000) * 100).toFixed(1)}%
                 </div>
                 <div className="text-sm text-gray-600">Ventas Netas</div>
               </div>
               <div className="text-center">
                 <div className="text-3xl font-bold text-blue-600">
-                  {((goalsData.dannyCoupons / 500) * 100).toFixed(1)}%
+                  {((goalsData.dannyCoupons / 200) * 100).toFixed(1)}%
                 </div>
                 <div className="text-sm text-gray-600">Cupones Danny</div>
               </div>

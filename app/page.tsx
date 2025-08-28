@@ -7,10 +7,14 @@ import BrandingSlide from "./components/branding-slide"
 import GoalsScreen from "./components/goals-screen"
 import { ChevronLeft, ChevronRight } from "lucide-react"
 import { Button } from "@/components/ui/button"
+import { Input } from "@/components/ui/input"
 
 export default function Home() {
   const [currentScreen, setCurrentScreen] = useState(0) // Start with first screen
   const [autoPlay, setAutoPlay] = useState(true) // Enable auto-play by default
+  const [isAuthenticated, setIsAuthenticated] = useState(false)
+  const [password, setPassword] = useState("")
+  const [error, setError] = useState("")
   
   const screens = [
     <BusinessOverview key="business" />, // 1. Stripe y métricas de negocio
@@ -52,11 +56,89 @@ export default function Home() {
     }
   }
 
+  const handleLogout = () => {
+    setIsAuthenticated(false)
+    localStorage.removeItem("dashboard_authenticated")
+  }
+
+  const handleLogin = (e: React.FormEvent) => {
+    e.preventDefault()
+    const correctPassword = process.env.NEXT_PUBLIC_DASHBOARD_PASSWORD || "redatlas2024@!"
+    
+    if (password === correctPassword) {
+      setIsAuthenticated(true)
+      setError("")
+      // Store authentication in localStorage to persist across page reloads
+      localStorage.setItem("dashboard_authenticated", "true")
+    } else {
+      setError("Contraseña incorrecta")
+    }
+  }
+
+  // Check if user is already authenticated on component mount
+  useEffect(() => {
+    const isAuth = localStorage.getItem("dashboard_authenticated") === "true"
+    setIsAuthenticated(isAuth)
+  }, [])
+
+  // Login screen
+  if (!isAuthenticated) {
+    return (
+      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+        <div className="bg-white rounded-2xl shadow-lg p-8 w-full max-w-md">
+          <div className="text-center mb-8">
+            <h1 className="text-3xl font-bold text-gray-900 mb-2">RED Atlas</h1>
+            <p className="text-gray-600">Dashboard de métricas</p>
+          </div>
+          
+          <form onSubmit={handleLogin} className="space-y-4">
+            <div>
+              <label htmlFor="password" className="block text-sm font-medium text-gray-700 mb-2">
+                Contraseña
+              </label>
+              <Input
+                id="password"
+                type="password"
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
+                placeholder="Ingresa tu contraseña"
+                className="w-full"
+                required
+              />
+            </div>
+            
+            {error && (
+              <div className="text-red-600 text-sm text-center">
+                {error}
+              </div>
+            )}
+            
+            <Button type="submit" className="w-full">
+              Ingresar
+            </Button>
+          </form>
+        </div>
+      </div>
+    )
+  }
+
   return (
     <main className="min-h-screen bg-gray-50 relative">
       {/* Main content */}
       <div className="relative">
         {screens[currentScreen]}
+      </div>
+
+      {/* Logout button - moved to bottom right */}
+      <div className="fixed bottom-4 right-4 z-50">
+        <Button
+          variant="outline"
+          size="sm"
+          onClick={handleLogout}
+          className="bg-white/90 backdrop-blur-sm hover:bg-white shadow-lg"
+        >
+          Cerrar Sesión
+        </Button>
       </div>
 
       {/* Navigation controls - only show if multiple screens are enabled */}
@@ -102,10 +184,7 @@ export default function Home() {
         </div>
       )}
 
-      {/* Screen indicator */}
-      <div className="fixed top-4 right-4 bg-white/90 backdrop-blur-sm rounded-lg px-3 py-1 shadow-lg border text-sm">
-        Pantalla: {currentScreen + 1} de {screens.length}
-      </div>
+
     </main>
   )
 }

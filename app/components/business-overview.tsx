@@ -177,12 +177,26 @@ export default function BusinessOverview() {
   const [lastTransactionTime, setLastTransactionTime] = useState<Date>(new Date())
   const [cricketsPlayed, setCricketsPlayed] = useState<boolean>(false)
   const [previousSubscriptionCount, setPreviousSubscriptionCount] = useState<number>(0)
+  const [audioEnabled, setAudioEnabled] = useState<boolean>(true)
+
+  // Función para habilitar audio automáticamente
+  const enableAudio = () => {
+    // Crear un audio silencioso para "desbloquear" el audio
+    const silentAudio = new Audio()
+    silentAudio.volume = 0
+    silentAudio.play().then(() => {
+      setAudioEnabled(true)
+      console.log('🔊 Audio habilitado correctamente')
+    }).catch(error => {
+      console.log('❌ Error al habilitar audio:', error)
+    })
+  }
 
   // Función para reproducir sonido de notificación
   const playNotificationSound = () => {
     try {
       const audio = new Audio('/sounds/notification.mp3')
-      audio.volume = 0.5 // Volumen al 50%
+      audio.volume = 0.8 // Volumen al 80% - MÁS FUERTE
       audio.play().catch(error => {
         console.log('No se pudo reproducir el sonido:', error)
       })
@@ -195,7 +209,7 @@ export default function BusinessOverview() {
   const playCricketsSound = () => {
     try {
       const audio = new Audio('/sounds/crickets.mp3')
-      audio.volume = 0.3 // Volumen más bajo para los grillos
+      audio.volume = 0.6 // Volumen al 60% - MÁS FUERTE
       audio.play().catch(error => {
         console.log('No se pudo reproducir el sonido de grillos:', error)
       })
@@ -208,7 +222,7 @@ export default function BusinessOverview() {
   const playFailSound = () => {
     try {
       const audio = new Audio('/sounds/fail.mp3')
-      audio.volume = 0.4 // Volumen al 40%
+      audio.volume = 0.7 // Volumen al 70% - MÁS FUERTE
       audio.play().catch(error => {
         console.log('No se pudo reproducir el sonido de fallo:', error)
       })
@@ -358,6 +372,9 @@ export default function BusinessOverview() {
   useEffect(() => {
     // Initial fetch
     fetchAllMetrics()
+
+    // Habilitar audio automáticamente
+    enableAudio()
 
     // Todas las métricas se actualizan cada 5 minutos
     const generalInterval = setInterval(
