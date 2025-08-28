@@ -207,17 +207,37 @@ export default function AnalyticsCharts() {
          return data
        }
 
-             // Use historical data from APIs
-       const paidUsersData = subscriptionsHistory.data ? subscriptionsHistory.data.map((item: any) => ({
-         date: item.date,
-         value: item.value
-       })) : []
+             // Use historical data from APIs, but ensure today's value matches the first screen
+       const realPaidUsers = (subscriptions.active_count || 0) + 15 // Same as business-overview.tsx
+       const paidUsersData = subscriptionsHistory.data ? subscriptionsHistory.data.map((item: any, index: number) => {
+         // If it's today (last item), use the exact value from first screen
+         if (index === subscriptionsHistory.data.length - 1) {
+           return {
+             date: item.date,
+             value: realPaidUsers
+           }
+         }
+         return {
+           date: item.date,
+           value: item.value
+         }
+       }) : []
        
-       // Use historical registered users data
-       const registeredUsersData = registeredUsersHistory.data ? registeredUsersHistory.data.map((item: any) => ({
-         date: item.date,
-         value: item.value
-       })) : []
+       // Use historical registered users data, but ensure today's value matches the first screen
+       const realRegisteredUsers = registeredUsers.value || 0 // Same as business-overview.tsx
+       const registeredUsersData = registeredUsersHistory.data ? registeredUsersHistory.data.map((item: any, index: number) => {
+         // If it's today (last item), use the exact value from first screen
+         if (index === registeredUsersHistory.data.length - 1) {
+           return {
+             date: item.date,
+             value: realRegisteredUsers
+           }
+         }
+         return {
+           date: item.date,
+           value: item.value
+         }
+       }) : []
        
        // Use page views from page-views-by-hour API (same as business-overview.tsx)
        // Convert the data format to match our chart format
@@ -226,11 +246,21 @@ export default function AnalyticsCharts() {
          value: item.views
        })) : []
        
-       // Use historical revenue data
-       const revenueData = revenueHistory.data ? revenueHistory.data.map((item: any) => ({
-         date: item.date,
-         value: item.value
-       })) : []
+       // Use historical revenue data, but ensure today's value matches the first screen
+       const realRevenue = (revenue.totalRevenue || 0) + 3000 // Same as business-overview.tsx
+       const revenueData = revenueHistory.data ? revenueHistory.data.map((item: any, index: number) => {
+         // If it's today (last item), use the exact value from first screen
+         if (index === revenueHistory.data.length - 1) {
+           return {
+             date: item.date,
+             value: realRevenue
+           }
+         }
+         return {
+           date: item.date,
+           value: item.value
+         }
+       }) : []
 
              setAnalyticsData({
          paidUsers: paidUsersData,
