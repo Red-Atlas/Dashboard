@@ -205,11 +205,27 @@ export default function AnalyticsCharts() {
        }
 
              // Use real data from APIs (same as business-overview.tsx)
-       const realPaidUsers = (subscriptions.active_count || 0) + 15 // Add 15 external users
-       const paidUsersData = generateMockData(realPaidUsers, 0.15, 2.0) // Use real subscription count + external
+       const realPaidUsers = (subscriptions.active_count || 0) + 15 // Add 15 external users (same as business-overview.tsx)
+       // Create real data array with the actual value for all 7 days (no mock data)
+       const paidUsersData = Array.from({ length: 7 }, (_, i) => {
+         const date = new Date()
+         date.setDate(date.getDate() - (6 - i))
+         return {
+           date: date.toLocaleDateString('es-ES', { day: 'numeric', month: 'short' }),
+           value: realPaidUsers
+         }
+       })
        
-       // Use registered users data (last 7 days) - generate mock data based on current value
-       const registeredUsersData = generateMockData(registeredUsers.value || 0, 0.3, 1.8)
+       // Use registered users data (last 7 days) - use real data
+       const realRegisteredUsers = registeredUsers.value || 0
+       const registeredUsersData = Array.from({ length: 7 }, (_, i) => {
+         const date = new Date()
+         date.setDate(date.getDate() - (6 - i))
+         return {
+           date: date.toLocaleDateString('es-ES', { day: 'numeric', month: 'short' }),
+           value: realRegisteredUsers
+         }
+       })
        
        // Use page views from page-views-by-hour API (same as business-overview.tsx)
        // Convert the data format to match our chart format
@@ -218,8 +234,16 @@ export default function AnalyticsCharts() {
          value: item.views
        })) : []
        
-       const realRevenue = (revenue.totalRevenue || 0) + 3000 // Add $3,000 external revenue
-       const revenueData = generateMockData(realRevenue, 0.25, 1.6) // Use real revenue + external
+       const realRevenue = (revenue.totalRevenue || 0) + 3000 // Add $3,000 external revenue (same as business-overview.tsx)
+       // Create real data array with the actual value for all 7 days (no mock data)
+       const revenueData = Array.from({ length: 7 }, (_, i) => {
+         const date = new Date()
+         date.setDate(date.getDate() - (6 - i))
+         return {
+           date: date.toLocaleDateString('es-ES', { day: 'numeric', month: 'short' }),
+           value: realRevenue
+         }
+       })
 
              setAnalyticsData({
          paidUsers: paidUsersData,
@@ -265,14 +289,14 @@ export default function AnalyticsCharts() {
          <div className="max-w-7xl mx-auto">
            {/* Charts Grid */}
            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-            <ChartCard
-              title="Usuarios Pagos"
-              data={analyticsData.paidUsers}
-              loading={loading.paidUsers}
-              color="#10b981"
-              format="number"
-              subtitle="Suscripciones activas"
-            />
+                         <ChartCard
+               title="Suscripciones Activas"
+               data={analyticsData.paidUsers}
+               loading={loading.paidUsers}
+               color="#10b981"
+               format="number"
+               subtitle="Suscripciones activas"
+             />
             
                          <ChartCard
                title="Usuarios Registrados"
