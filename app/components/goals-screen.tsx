@@ -240,7 +240,7 @@ export default function GoalsScreen() {
                 <div className="text-3xl font-bold text-blue-600">
                   {((goalsData.registeredUsers / 42000) * 100).toFixed(1)}%
                 </div>
-                <div className="text-sm text-gray-600">Usuarios Registrados</div>
+                <div className="text-sm text-gray-600">Usuarios Activos</div>
               </div>
               <div className="text-center">
                 <div className="text-3xl font-bold text-green-600">
