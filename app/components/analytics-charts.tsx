@@ -161,13 +161,14 @@ export default function AnalyticsCharts() {
     })
 
     try {
-      // Fetch all data in parallel
-      const [subscriptions, activeUsers, pageViews, revenue] = await Promise.all([
-        fetch("/api/metrics/stripe-subscriptions").then(r => r.json()),
-        fetch("/api/metrics/active-users-30min").then(r => r.json()),
-        fetch("/api/metrics/page-views-by-hour").then(r => r.json()),
-        fetch("/api/metrics/stripe-revenue").then(r => r.json())
-      ])
+             // Fetch all data in parallel (same APIs as business-overview.tsx)
+       const [subscriptions, registeredUsers, pageViewsToday, pageViewsByHour, revenue] = await Promise.all([
+         fetch("/api/metrics/stripe-subscriptions").then(r => r.json()),
+         fetch("/api/metrics/registered-users").then(r => r.json()), // Changed to registered users
+         fetch("/api/metrics/page-views-today").then(r => r.json()),
+         fetch("/api/metrics/page-views-by-hour").then(r => r.json()),
+         fetch("/api/metrics/stripe-revenue").then(r => r.json())
+       ])
 
              // Generate mock data for the last 7 days (since we don't have historical data)
        const generateMockData = (baseValue: number, variation: number = 0.2, maxMultiplier: number = 1.3) => {
@@ -203,24 +204,26 @@ export default function AnalyticsCharts() {
          return data
        }
 
-             // Generate data for each metric using real values as base with better scaling
-       const realPaidUsers = subscriptions.active_count || 0
-       const paidUsersData = generateMockData(realPaidUsers, 0.15, 2.0) // Multiplicador 2.0 para más rango
+             // Use real data from APIs (same as business-overview.tsx)
+       const realPaidUsers = (subscriptions.active_count || 0) + 15 // Add 15 external users
+       const paidUsersData = generateMockData(realPaidUsers, 0.15, 2.0) // Use real subscription count + external
        
-       const activeUsersData = generateMockData(activeUsers.value || 0, 0.3, 1.8) // Multiplicador 1.8
+       // Use registered users instead of active users (last 7 days)
+       const registeredUsersData = generateMockData(registeredUsers.value || 0, 0.3, 1.8)
        
-       const realPageViews = pageViews.value || 0
-       const pageViewsData = generateMockData(realPageViews, 0.4, 1.8) // Multiplicador 1.8
+       // Use page views from page-views-today API (same as business-overview.tsx)
+       const realPageViews = pageViewsToday.value || 0
+       const pageViewsData = generateMockData(realPageViews, 0.4, 1.8) // Use real page views
        
-       const realRevenue = revenue.totalRevenue || 0
-       const revenueData = generateMockData(realRevenue, 0.25, 1.6) // Multiplicador 1.6
+       const realRevenue = (revenue.totalRevenue || 0) + 3000 // Add $3,000 external revenue
+       const revenueData = generateMockData(realRevenue, 0.25, 1.6) // Use real revenue + external
 
-      setAnalyticsData({
-        paidUsers: paidUsersData,
-        activeUsers: activeUsersData,
-        pageViews: pageViewsData,
-        revenue: revenueData
-      })
+             setAnalyticsData({
+         paidUsers: paidUsersData,
+         activeUsers: registeredUsersData, // Using registered users data
+         pageViews: pageViewsData,
+         revenue: revenueData
+       })
     } catch (error) {
       console.error("Failed to fetch analytics data:", error)
     } finally {
@@ -268,14 +271,14 @@ export default function AnalyticsCharts() {
               subtitle="Suscripciones activas"
             />
             
-            <ChartCard
-              title="Usuarios Activos"
-              data={analyticsData.activeUsers}
-              loading={loading.activeUsers}
-              color="#3b82f6"
-              format="number"
-              subtitle="Usuarios registrados (Google Analytics)"
-            />
+                         <ChartCard
+               title="Usuarios Registrados"
+               data={analyticsData.activeUsers}
+               loading={loading.activeUsers}
+               color="#3b82f6"
+               format="number"
+               subtitle="Usuarios registrados (últimos 7 días)"
+             />
             
             <ChartCard
               title="Page Views"
