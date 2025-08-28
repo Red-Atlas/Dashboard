@@ -161,13 +161,16 @@ export default function AnalyticsCharts() {
     })
 
     try {
-             // Fetch all data in parallel (same APIs as business-overview.tsx)
-       const [subscriptions, registeredUsers, pageViewsToday, pageViewsByHour, revenue] = await Promise.all([
+             // Fetch all data in parallel (including historical data)
+       const [subscriptions, registeredUsers, pageViewsToday, pageViewsByHour, revenue, subscriptionsHistory, registeredUsersHistory, revenueHistory] = await Promise.all([
          fetch("/api/metrics/stripe-subscriptions").then(r => r.json()),
-         fetch("/api/metrics/registered-users").then(r => r.json()), // Changed to registered users
+         fetch("/api/metrics/registered-users").then(r => r.json()),
          fetch("/api/metrics/page-views-today").then(r => r.json()),
          fetch("/api/metrics/page-views-by-hour").then(r => r.json()),
-         fetch("/api/metrics/stripe-revenue").then(r => r.json())
+         fetch("/api/metrics/stripe-revenue").then(r => r.json()),
+         fetch("/api/metrics/stripe-subscriptions-history").then(r => r.json()),
+         fetch("/api/metrics/registered-users-history").then(r => r.json()),
+         fetch("/api/metrics/stripe-revenue-history").then(r => r.json())
        ])
 
              // Generate mock data for the last 7 days (since we don't have historical data)
@@ -204,28 +207,17 @@ export default function AnalyticsCharts() {
          return data
        }
 
-             // Use real data from APIs (same as business-overview.tsx)
-       const realPaidUsers = (subscriptions.active_count || 0) + 15 // Add 15 external users (same as business-overview.tsx)
-       // Create real data array with the actual value for all 7 days (no mock data)
-       const paidUsersData = Array.from({ length: 7 }, (_, i) => {
-         const date = new Date()
-         date.setDate(date.getDate() - (6 - i))
-         return {
-           date: date.toLocaleDateString('es-ES', { day: 'numeric', month: 'short' }),
-           value: realPaidUsers
-         }
-       })
+             // Use historical data from APIs
+       const paidUsersData = subscriptionsHistory.data ? subscriptionsHistory.data.map((item: any) => ({
+         date: item.date,
+         value: item.value
+       })) : []
        
-       // Use registered users data (last 7 days) - use real data
-       const realRegisteredUsers = registeredUsers.value || 0
-       const registeredUsersData = Array.from({ length: 7 }, (_, i) => {
-         const date = new Date()
-         date.setDate(date.getDate() - (6 - i))
-         return {
-           date: date.toLocaleDateString('es-ES', { day: 'numeric', month: 'short' }),
-           value: realRegisteredUsers
-         }
-       })
+       // Use historical registered users data
+       const registeredUsersData = registeredUsersHistory.data ? registeredUsersHistory.data.map((item: any) => ({
+         date: item.date,
+         value: item.value
+       })) : []
        
        // Use page views from page-views-by-hour API (same as business-overview.tsx)
        // Convert the data format to match our chart format
@@ -234,16 +226,11 @@ export default function AnalyticsCharts() {
          value: item.views
        })) : []
        
-       const realRevenue = (revenue.totalRevenue || 0) + 3000 // Add $3,000 external revenue (same as business-overview.tsx)
-       // Create real data array with the actual value for all 7 days (no mock data)
-       const revenueData = Array.from({ length: 7 }, (_, i) => {
-         const date = new Date()
-         date.setDate(date.getDate() - (6 - i))
-         return {
-           date: date.toLocaleDateString('es-ES', { day: 'numeric', month: 'short' }),
-           value: realRevenue
-         }
-       })
+       // Use historical revenue data
+       const revenueData = revenueHistory.data ? revenueHistory.data.map((item: any) => ({
+         date: item.date,
+         value: item.value
+       })) : []
 
              setAnalyticsData({
          paidUsers: paidUsersData,
