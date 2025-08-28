@@ -208,12 +208,15 @@ export default function AnalyticsCharts() {
        const realPaidUsers = (subscriptions.active_count || 0) + 15 // Add 15 external users
        const paidUsersData = generateMockData(realPaidUsers, 0.15, 2.0) // Use real subscription count + external
        
-       // Use registered users instead of active users (last 7 days)
+       // Use registered users data (last 7 days) - generate mock data based on current value
        const registeredUsersData = generateMockData(registeredUsers.value || 0, 0.3, 1.8)
        
-       // Use page views from page-views-today API (same as business-overview.tsx)
-       const realPageViews = pageViewsToday.value || 0
-       const pageViewsData = generateMockData(realPageViews, 0.4, 1.8) // Use real page views
+       // Use page views from page-views-by-hour API (same as business-overview.tsx)
+       // Convert the data format to match our chart format
+       const pageViewsData = pageViewsByHour.data ? pageViewsByHour.data.slice(-7).map((item: any) => ({
+         date: item.date,
+         value: item.views
+       })) : []
        
        const realRevenue = (revenue.totalRevenue || 0) + 3000 // Add $3,000 external revenue
        const revenueData = generateMockData(realRevenue, 0.25, 1.6) // Use real revenue + external
