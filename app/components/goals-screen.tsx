@@ -107,15 +107,16 @@ export default function GoalsScreen() {
     paidSubscriptions: 0,
     pageViews: 0,
     netRevenue: 0,
-    dannyCoupons: 11 // Hardcoded as requested
+    dannyCoupons: 0
   })
   const [loading, setLoading] = useState(true)
+  const [mounted, setMounted] = useState(false)
 
   const fetchGoalsData = async () => {
     setLoading(true)
     try {
-      const [registeredUsers, subscriptions, pageViews, revenue] = await Promise.all([
-        fetch("/api/metrics/registered-users").then(r => r.json()),
+      const [atlasData, subscriptions, pageViews, revenue] = await Promise.all([
+        fetch("/api/atlas-data").then(r => r.json()),
         fetch("/api/metrics/stripe-subscriptions").then(r => r.json()),
         fetch("/api/metrics/page-views-by-hour").then(r => r.json()),
         fetch("/api/metrics/stripe-revenue").then(r => r.json())
@@ -124,12 +125,15 @@ export default function GoalsScreen() {
       // Calculate total page views from the last 7 days
       const totalPageViews = pageViews.data?.slice(-7).reduce((sum: number, day: any) => sum + day.views, 0) || 0
 
+      // Calculate total registered users from Atlas DB (PR + COL)
+      const totalRegisteredUsers = (atlasData.data?.users?.pri || 0) + (atlasData.data?.users?.col || 0)
+
       setGoalsData({
-        registeredUsers: registeredUsers.value || 0,
-        paidSubscriptions: (subscriptions.active_count || 0) + 15, // Including external subscriptions
+        registeredUsers: totalRegisteredUsers,
+        paidSubscriptions: (subscriptions.active_count || 0) + (atlasData.data?.users?.externalPayments || 0), // Including external subscriptions
         pageViews: totalPageViews,
         netRevenue: (revenue.totalRevenue || 0) + 3000, // Including external revenue
-        dannyCoupons: 11 // Hardcoded
+        dannyCoupons: atlasData.data?.coupons?.daniel?.total || 0 
       })
     } catch (error) {
       console.error("Failed to fetch goals data:", error)
@@ -139,15 +143,21 @@ export default function GoalsScreen() {
   }
 
   useEffect(() => {
-    fetchGoalsData()
-    
-    // Refresh every 5 minutes
-    const interval = setInterval(fetchGoalsData, 5 * 60 * 1000)
-    
-    return () => clearInterval(interval)
+    setMounted(true)
   }, [])
 
-  if (loading) {
+  useEffect(() => {
+    if (mounted) {
+      fetchGoalsData()
+      
+      // Refresh every 5 minutes
+      const interval = setInterval(fetchGoalsData, 5 * 60 * 1000)
+      
+      return () => clearInterval(interval)
+    }
+  }, [mounted])
+
+  if (!mounted || loading) {
     return (
       <div className="min-h-screen p-8 relative bg-gray-50">
         {/* Logo */}

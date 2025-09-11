@@ -6,6 +6,7 @@ import AdsPerformance from "./components/ads-performance"
 import BrandingSlide from "./components/branding-slide"
 import GoalsScreen from "./components/goals-screen"
 import AnalyticsCharts from "./components/analytics-charts"
+import RedAtlasDB from "./components/RedAtlasDB";
 import { ChevronLeft, ChevronRight } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
@@ -22,11 +23,12 @@ export default function Home() {
     <AdsPerformance key="ads" />,        // 2. Google Analytics
     <GoalsScreen key="goals" />,         // 3. Metas
     <AnalyticsCharts key="charts" />,    // 4. Gráficos de tendencias
-    <BrandingSlide key="branding" />     // 5. Red Atlas
+    <BrandingSlide key="branding" />,     // 5. Red Atlas
+    <RedAtlasDB key="redAtlasDB" /> // 6. Red Atlas DB Data
   ]
 
   // All screens enabled in the correct order
-  const enabledScreens = [0, 1, 2, 3, 4] // All screens: Stripe, Analytics, Goals, Charts, Red Atlas
+  const enabledScreens = [0, 1, 2, 3, 4, 5]; // All screens: Stripe, Analytics, Goals, Charts, Red Atlas, Atlas Data
 
   useEffect(() => {
     if (!autoPlay) return
