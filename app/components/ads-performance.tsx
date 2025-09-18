@@ -161,7 +161,7 @@ export default function AdsPerformance() {
               )}
               <div className="text-6xl font-bold text-gray-900 mb-4 text-center">{metrics?.activeUsers7days.value ? formatEuropeanInteger(metrics.activeUsers7days.value) : 0}</div>
               <div className="text-xl text-gray-700 font-semibold text-center">Usuarios Activos</div>
-              <div className="text-xs text-gray-500 text-center mt-2">Últimos 7 días</div>
+              <div className="text-xs text-gray-500 text-center mt-2">Últimos 7 días </div>
             </div>
 
             {/* Registered Users */}
