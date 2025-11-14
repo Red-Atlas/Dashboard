@@ -242,58 +242,51 @@ export default function BusinessOverview() {
     useState<number>(0);
   const [audioEnabled, setAudioEnabled] = useState<boolean>(true);
 
-  // Función para habilitar audio automáticamente
+  // Function to enable audio automatically
   const enableAudio = () => {
-    // Crear un audio silencioso para "desbloquear" el audio
+    // Create a silent audio to "unlock" audio playback
     const silentAudio = new Audio();
     silentAudio.volume = 0;
     silentAudio
       .play()
       .then(() => {
         setAudioEnabled(true);
-        console.log("🔊 Audio habilitado correctamente");
       })
-      .catch((error) => {
-        console.log("❌ Error al habilitar audio:", error);
+      .catch(() => {
+        // Audio enable failed
       });
   };
 
-  // Función para reproducir sonido de notificación
+  // Function to play notification sound
   const playNotificationSound = () => {
     try {
       const audio = new Audio("/sounds/notification.mp3");
-      audio.volume = 0.8; // Volumen al 80% - MÁS FUERTE
-      audio.play().catch((error) => {
-        console.log("No se pudo reproducir el sonido:", error);
-      });
+      audio.volume = 0.8; // Volume at 80%
+      audio.play().catch(() => {});
     } catch (error) {
-      console.log("Error al reproducir sonido:", error);
+      // Sound playback failed
     }
   };
 
-  // Función para reproducir sonido de grillos (inactividad)
+  // Function to play crickets sound (inactivity)
   const playCricketsSound = () => {
     try {
       const audio = new Audio("/sounds/crickets.mp3");
-      audio.volume = 0.6; // Volumen al 60% - MÁS FUERTE
-      audio.play().catch((error) => {
-        console.log("No se pudo reproducir el sonido de grillos:", error);
-      });
+      audio.volume = 0.6; // Volume at 60%
+      audio.play().catch(() => {});
     } catch (error) {
-      console.log("Error al reproducir sonido de grillos:", error);
+      // Sound playback failed
     }
   };
 
-  // Función para reproducir sonido de fallo (pérdida de suscripción)
+  // Function to play fail sound (subscription loss)
   const playFailSound = () => {
     try {
       const audio = new Audio("/sounds/fail.mp3");
-      audio.volume = 0.7; // Volumen al 70% - MÁS FUERTE
-      audio.play().catch((error) => {
-        console.log("No se pudo reproducir el sonido de fallo:", error);
-      });
+      audio.volume = 0.7; // Volume at 70%
+      audio.play().catch(() => {});
     } catch (error) {
-      console.log("Error al reproducir sonido de fallo:", error);
+      // Sound playback failed
     }
   };
 

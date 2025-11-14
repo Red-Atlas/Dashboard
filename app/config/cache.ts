@@ -10,7 +10,7 @@
 // 300 = 5 minutos
 // 600 = 10 minutos
 // 1800 = 30 minutos
-export const CACHE_DURATION_SECONDS = 600; // 10 minutos
+export const CACHE_DURATION_SECONDS = 1800; // 30 minutos
 
 // Tempo de cache em milissegundos (para uso no cliente)
 export const CACHE_DURATION_MS = CACHE_DURATION_SECONDS * 1000;

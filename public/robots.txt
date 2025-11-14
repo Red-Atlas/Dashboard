@@ -1,0 +1,5 @@
+User-agent: *
+Disallow: /
+
+# RED Atlas Dashboard - Internal Use Only
+# This is a private dashboard and should not be indexed by search engines
