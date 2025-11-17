@@ -78,15 +78,23 @@ export async function GET() {
           "0"
         )}`;
 
+        const failureReason =
+          charge.failure_message ||
+          (charge.outcome &&
+            (charge.outcome.seller_message || charge.outcome.reason)) ||
+          null;
+
         return {
-          amount: charge.amount / 100, // Convert from cents to dollars
+          amount: charge.amount / 100,
           email: customerEmail || "No email available",
           customer_name: customerName || null,
-          date: dateString, // Date in Puerto Rico timezone
-          time: puertoRicoTime, // Time in Puerto Rico timezone
+          date: dateString,
+          time: puertoRicoTime,
           currency: charge.currency.toUpperCase(),
           status: charge.status,
-          coupon_name: null, // No coupon info with charges
+          coupon_name: null,
+          failure_reason: failureReason,
+          failure_code: charge.failure_code || null,
         };
       })
     );

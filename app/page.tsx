@@ -31,8 +31,8 @@ export default function Home() {
   // All screens enabled in the correct order
   const enabledScreens = [0, 1, 2, 3, 4, 5]; // All screens: Stripe, Analytics, Goals, Charts, Red Atlas, Atlas Data
 
-  // Ativar prefetch para melhorar performance
-  usePrefetch(currentScreen, enabledScreens, 15000); // Prefetch 15 segundos antes
+  // Ativar prefetch para melhorar performance somente quando autenticado
+  usePrefetch(currentScreen, enabledScreens, 15000, isAuthenticated); // Prefetch 15 segundos antes
 
   useEffect(() => {
     if (!autoPlay) return;

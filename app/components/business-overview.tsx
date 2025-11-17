@@ -9,13 +9,19 @@ import {
   XAxis,
   YAxis,
   ResponsiveContainer,
-  Tooltip,
+  Tooltip as RechartsTooltip,
   LabelList,
 } from "recharts";
 import { ChartContainer } from "@/components/ui/chart";
 import Image from "next/image";
 import { apiCache } from "@/app/utils/apiCache";
 import { CACHE_DURATION_MS, CACHE_CONFIG } from "@/app/config/cache";
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from "@/components/ui/tooltip";
 
 interface BusinessMetrics {
   activeUsers: number;
@@ -52,6 +58,8 @@ interface Transaction {
   status?: string;
   customer_name?: string;
   coupon_name?: string;
+  failure_reason?: string | null;
+  failure_code?: string | null;
 }
 
 interface RevenueMetrics {
@@ -392,7 +400,10 @@ export default function BusinessOverview() {
   const fetchRevenueMetrics = async () => {
     setLoading((prev) => ({ ...prev, revenue: true }));
     try {
-      const data = await apiCache.fetch("/api/metrics/stripe-revenue", CACHE_DURATION_MS);
+      const data = await apiCache.fetch(
+        "/api/metrics/stripe-revenue",
+        CACHE_DURATION_MS
+      );
       setRevenueMetrics(data);
     } catch (error) {
       console.error("Failed to fetch revenue metrics:", error);
@@ -509,297 +520,319 @@ export default function BusinessOverview() {
   };
 
   return (
-    <div className="min-h-screen p-8 relative">
-      {/* Logo en esquina superior izquierda */}
-      <div className="absolute top-8 left-8">
-        <Image
-          src="/red-atlas-logo.png"
-          alt="RED Atlas Logo"
-          width={200}
-          height={60}
-          className="h-16 w-auto"
-        />
-      </div>
+    <TooltipProvider delayDuration={0}>
+      <div className="min-h-screen p-8 relative">
+        {/* Logo en esquina superior izquierda */}
+        <div className="absolute top-8 left-8">
+          <Image
+            src="/red-atlas-logo.png"
+            alt="RED Atlas Logo"
+            width={200}
+            height={60}
+            className="h-16 w-auto"
+          />
+        </div>
 
-      {/* Títulos en esquina superior derecha */}
-      <div className="absolute top-8 right-8 text-right">
-        <p className="text-xl text-gray-600">Resumen comercial</p>
-      </div>
+        {/* Títulos en esquina superior derecha */}
+        <div className="absolute top-8 right-8 text-right">
+          <p className="text-xl text-gray-600">Resumen comercial</p>
+        </div>
 
-      {/* Contenido principal con margen superior para el header */}
-      <div className="mt-24">
-        {/* Two Column Layout */}
-        <div className="grid grid-cols-5 gap-8 mb-8">
-          {/* Left Column - 60% width (3/5) */}
-          <div className="col-span-3 space-y-6">
-            {/* Metrics Grid */}
-            <div className="grid grid-cols-2 gap-6">
-              <MetricCard
-                title="Usuarios Activos"
-                value={metrics.activeUsers}
-                loading={loading.activeUsers}
-                subtitle="Últimos 30 minutos"
-                color="green"
-                isEuropeanFormat={true}
-                percentageChange={metrics.activeUsersPercentageChange}
-              />
-              <MetricCard
-                title="Suscripciones Activas"
-                value={(subscriptions?.active_count || 0) + 15}
-                loading={loading.subscriptions}
-                color="green"
-                isEuropeanFormat={true}
-                // Agregar desglose mensual/anual a la derecha
-                subtitle={
-                  subscriptions
-                    ? `Mensual: ${subscriptions.monthly_count || 0} | Anual: ${
-                        subscriptions.yearly_count || 0
-                      }`
-                    : undefined
-                }
-                // Agregar aclaración de suscripciones externas
-                externalNote="15 externas"
-                goal={1000}
-              />
-              <MetricCard
-                title="Volumen de ventas neto"
-                value={(revenueMetrics.totalRevenue || 0) + 3000}
-                loading={loading.revenue}
-                subtitle="Últimas 4 semanas"
-                color="green"
-                isCurrency={true}
-                percentageChange={revenueMetrics.percentageChange}
-                currencyBreakdown={revenueMetrics.currencyBreakdown}
-                // Agregar aclaración de ventas externas
-                externalNote="Ventas externas: $3,000"
-              />
-              <MetricCard
-                title="Transacciones exitosas"
-                value={revenueMetrics.transactionCount}
-                loading={loading.revenue}
-                subtitle="Últimas 4 semanas"
-                isEuropeanFormat={true}
-                percentageChange={revenueMetrics.transactionPercentageChange}
-              />
-            </div>
+        {/* Contenido principal con margen superior para el header */}
+        <div className="mt-24">
+          {/* Two Column Layout */}
+          <div className="grid grid-cols-5 gap-8 mb-8">
+            {/* Left Column - 60% width (3/5) */}
+            <div className="col-span-3 space-y-6">
+              {/* Metrics Grid */}
+              <div className="grid grid-cols-2 gap-6">
+                <MetricCard
+                  title="Usuarios Activos"
+                  value={metrics.activeUsers}
+                  loading={loading.activeUsers}
+                  subtitle="Últimos 30 minutos"
+                  color="green"
+                  isEuropeanFormat={true}
+                  percentageChange={metrics.activeUsersPercentageChange}
+                />
+                <MetricCard
+                  title="Suscripciones Activas"
+                  value={(subscriptions?.active_count || 0) + 15}
+                  loading={loading.subscriptions}
+                  color="green"
+                  isEuropeanFormat={true}
+                  // Agregar desglose mensual/anual a la derecha
+                  subtitle={
+                    subscriptions
+                      ? `Mensual: ${
+                          subscriptions.monthly_count || 0
+                        } | Anual: ${subscriptions.yearly_count || 0}`
+                      : undefined
+                  }
+                  // Agregar aclaración de suscripciones externas
+                  externalNote="15 externas"
+                  goal={1000}
+                />
+                <MetricCard
+                  title="Volumen de ventas neto"
+                  value={(revenueMetrics.totalRevenue || 0) + 3000}
+                  loading={loading.revenue}
+                  subtitle="Últimas 4 semanas"
+                  color="green"
+                  isCurrency={true}
+                  percentageChange={revenueMetrics.percentageChange}
+                  currencyBreakdown={revenueMetrics.currencyBreakdown}
+                  // Agregar aclaración de ventas externas
+                  externalNote="Ventas externas: $3,000"
+                />
+                <MetricCard
+                  title="Transacciones exitosas"
+                  value={revenueMetrics.transactionCount}
+                  loading={loading.revenue}
+                  subtitle="Últimas 4 semanas"
+                  isEuropeanFormat={true}
+                  percentageChange={revenueMetrics.transactionPercentageChange}
+                />
+              </div>
 
-            {/* Page Views Card with Chart - altura fija */}
-            <div className="bg-white rounded-2xl shadow-lg p-6 h-96">
-              {loading.pageViews ? (
-                <div className="animate-pulse">
-                  <div className="h-16 bg-gray-200 rounded mb-4"></div>
-                  <div className="h-6 bg-gray-200 rounded w-1/2 mb-4"></div>
-                  <div className="h-32 bg-gray-200 rounded"></div>
-                </div>
-              ) : (
-                <>
-                  <div className="text-5xl font-bold text-gray-900 mb-2">
-                    {formatEuropeanInteger(metrics.pageViewsYesterday)}
+              {/* Page Views Card with Chart - altura fija */}
+              <div className="bg-white rounded-2xl shadow-lg p-6 h-96">
+                {loading.pageViews ? (
+                  <div className="animate-pulse">
+                    <div className="h-16 bg-gray-200 rounded mb-4"></div>
+                    <div className="h-6 bg-gray-200 rounded w-1/2 mb-4"></div>
+                    <div className="h-32 bg-gray-200 rounded"></div>
                   </div>
-                  <div className="text-lg text-gray-700 mb-2">
-                    Páginas vistas
-                  </div>
-                  <div className="text-sm text-gray-500 mb-4">
-                    Últimos 7 días • Total:{" "}
-                    {formatEuropeanInteger(
-                      metrics.pageViewsByDay
-                        .slice(-7)
-                        .reduce((sum, day) => sum + day.views, 0)
-                    )}
-                  </div>
+                ) : (
+                  <>
+                    <div className="text-5xl font-bold text-gray-900 mb-2">
+                      {formatEuropeanInteger(metrics.pageViewsYesterday)}
+                    </div>
+                    <div className="text-lg text-gray-700 mb-2">
+                      Páginas vistas
+                    </div>
+                    <div className="text-sm text-gray-500 mb-4">
+                      Últimos 7 días • Total:{" "}
+                      {formatEuropeanInteger(
+                        metrics.pageViewsByDay
+                          .slice(-7)
+                          .reduce((sum, day) => sum + day.views, 0)
+                      )}
+                    </div>
 
-                  {metrics.pageViewsByDay.length > 0 && (
-                    <div className="h-64 -mx-2">
-                      <ChartContainer
-                        config={{
-                          views: {
-                            label: "Views",
-                            color: "#d31216",
-                          },
-                        }}
-                        className="h-full w-full"
-                      >
-                        <ResponsiveContainer width="100%" height="100%">
-                          <BarChart
-                            data={metrics.pageViewsByDay.slice(-7)}
-                            margin={{
-                              top: 30,
-                              right: 10,
-                              left: 10,
-                              bottom: 25,
-                            }}
-                          >
-                            <XAxis
-                              dataKey="date"
-                              axisLine={false}
-                              tickLine={false}
-                              tick={{ fontSize: 11, fill: "#6b7280" }}
-                              interval="preserveStartEnd"
-                            />
-                            <YAxis
-                              axisLine={false}
-                              tickLine={false}
-                              tick={{ fontSize: 11, fill: "#6b7280" }}
-                              width={45}
-                            />
-                            <Tooltip
-                              contentStyle={{
-                                backgroundColor: "#fff",
-                                border: "1px solid #e5e7eb",
-                                borderRadius: "8px",
-                                boxShadow: "0 4px 6px -1px rgba(0, 0, 0, 0.1)",
+                    {metrics.pageViewsByDay.length > 0 && (
+                      <div className="h-64 -mx-2">
+                        <ChartContainer
+                          config={{
+                            views: {
+                              label: "Views",
+                              color: "#d31216",
+                            },
+                          }}
+                          className="h-full w-full"
+                        >
+                          <ResponsiveContainer width="100%" height="100%">
+                            <BarChart
+                              data={metrics.pageViewsByDay.slice(-7)}
+                              margin={{
+                                top: 30,
+                                right: 10,
+                                left: 10,
+                                bottom: 25,
                               }}
-                              labelStyle={{
-                                color: "#374151",
-                                fontWeight: "bold",
-                              }}
-                              formatter={(value: any, name: any) => [
-                                `${formatEuropeanInteger(
-                                  parseInt(value)
-                                )} views`,
-                                "Page Views",
-                              ]}
-                              labelFormatter={(label: any) => {
-                                // Detectar si es HOY comparando con la fecha actual
-                                const today = new Date().toLocaleDateString(
-                                  "es-ES",
-                                  { day: "numeric", month: "short" }
-                                );
-                                return label === today
-                                  ? `${label} (HOY - En vivo)`
-                                  : `${label}`;
-                              }}
-                            />
-                            <Bar
-                              dataKey="views"
-                              fill="#d31216"
-                              radius={[2, 2, 0, 0]}
                             >
-                              <LabelList
-                                dataKey="views"
-                                position="top"
-                                style={{
-                                  fontSize: "10px",
-                                  fill: "#374151",
-                                  fontWeight: "600",
+                              <XAxis
+                                dataKey="date"
+                                axisLine={false}
+                                tickLine={false}
+                                tick={{ fontSize: 11, fill: "#6b7280" }}
+                                interval="preserveStartEnd"
+                              />
+                              <YAxis
+                                axisLine={false}
+                                tickLine={false}
+                                tick={{ fontSize: 11, fill: "#6b7280" }}
+                                width={45}
+                              />
+                              <RechartsTooltip
+                                contentStyle={{
+                                  backgroundColor: "#fff",
+                                  border: "1px solid #e5e7eb",
+                                  borderRadius: "8px",
+                                  boxShadow:
+                                    "0 4px 6px -1px rgba(0, 0, 0, 0.1)",
+                                }}
+                                labelStyle={{
+                                  color: "#374151",
+                                  fontWeight: "bold",
+                                }}
+                                formatter={(value: any, name: any) => [
+                                  `${formatEuropeanInteger(
+                                    parseInt(value)
+                                  )} views`,
+                                  "Page Views",
+                                ]}
+                                labelFormatter={(label: any) => {
+                                  // Detectar si es HOY comparando con la fecha actual
+                                  const today = new Date().toLocaleDateString(
+                                    "es-ES",
+                                    { day: "numeric", month: "short" }
+                                  );
+                                  return label === today
+                                    ? `${label} (HOY - En vivo)`
+                                    : `${label}`;
                                 }}
                               />
-                            </Bar>
-                          </BarChart>
-                        </ResponsiveContainer>
-                      </ChartContainer>
-                    </div>
-                  )}
-                </>
-              )}
-            </div>
-          </div>
-
-          {/* Right Column - 40% width (2/5) - altura fija para coincidir */}
-          <div className="col-span-2">
-            <div
-              className="bg-white rounded-2xl shadow-lg p-6 flex flex-col"
-              style={{ height: "43.5rem" }}
-            >
-              <h3 className="text-2xl font-bold text-gray-900 mb-6">
-                Últimas transacciones
-              </h3>
-
-              {loading.transactions ? (
-                <div className="space-y-3 flex-1">
-                  {Array.from({ length: 7 }).map((_, i) => (
-                    <div
-                      key={i}
-                      className="animate-pulse flex justify-between items-center py-2"
-                    >
-                      <div>
-                        <div className="h-4 bg-gray-200 rounded w-32 mb-2"></div>
-                        <div className="h-3 bg-gray-200 rounded w-24"></div>
-                      </div>
-                      <div className="h-4 bg-gray-200 rounded w-16"></div>
-                    </div>
-                  ))}
-                </div>
-              ) : (
-                <div className="space-y-3 flex-1 overflow-hidden">
-                  {(Array.isArray(transactions) ? transactions : [])
-                    .slice(0, 7)
-                    .map((transaction, index) => (
-                      <div
-                        key={index}
-                        className="flex justify-between items-center py-3 border-b border-gray-100 last:border-b-0"
-                      >
-                        <div className="flex-1 min-w-0">
-                          <div className="flex items-center gap-2 mb-1">
-                            <div className="font-semibold text-gray-900">
-                              ${transaction.amount.toFixed(2)}{" "}
-                              {transaction.currency || "USD"}
-                            </div>
-                            {transaction.status && (
-                              <span
-                                className={`px-2 py-1 text-xs rounded-full ${
-                                  transaction.status === "succeeded"
-                                    ? "bg-green-100 text-green-800"
-                                    : transaction.status === "pending"
-                                    ? "bg-yellow-100 text-yellow-800"
-                                    : "bg-red-100 text-red-800"
-                                }`}
+                              <Bar
+                                dataKey="views"
+                                fill="#d31216"
+                                radius={[2, 2, 0, 0]}
                               >
-                                {transaction.status}
-                              </span>
-                            )}
-                          </div>
-                          <div className="text-sm text-gray-600 truncate">
-                            {transaction.customer_name || transaction.email}
-                          </div>
-                          {transaction.customer_name && (
-                            <div className="text-xs text-gray-400 truncate">
-                              {transaction.email}
-                            </div>
-                          )}
+                                <LabelList
+                                  dataKey="views"
+                                  position="top"
+                                  style={{
+                                    fontSize: "10px",
+                                    fill: "#374151",
+                                    fontWeight: "600",
+                                  }}
+                                />
+                              </Bar>
+                            </BarChart>
+                          </ResponsiveContainer>
+                        </ChartContainer>
+                      </div>
+                    )}
+                  </>
+                )}
+              </div>
+            </div>
+
+            {/* Right Column - 40% width (2/5) - altura fija para coincidir */}
+            <div className="col-span-2">
+              <div
+                className="bg-white rounded-2xl shadow-lg p-6 flex flex-col"
+                style={{ height: "43.5rem" }}
+              >
+                <h3 className="text-2xl font-bold text-gray-900 mb-6">
+                  Últimas transacciones
+                </h3>
+
+                {loading.transactions ? (
+                  <div className="space-y-3 flex-1">
+                    {Array.from({ length: 7 }).map((_, i) => (
+                      <div
+                        key={i}
+                        className="animate-pulse flex justify-between items-center py-2"
+                      >
+                        <div>
+                          <div className="h-4 bg-gray-200 rounded w-32 mb-2"></div>
+                          <div className="h-3 bg-gray-200 rounded w-24"></div>
                         </div>
-                        <div className="flex flex-col items-end text-sm text-gray-500 ml-4 flex-shrink-0">
-                          <div className="flex items-center gap-3 text-sm text-gray-500 ml-4 flex-shrink-0">
-                            <div className="flex flex-col items-center">
-                              <span className="font-semibold text-gray-700 text-xs">
-                                Cupón:
-                              </span>
-                              {transaction.coupon_name ? (
-                                <span className="font-bold text-blue-600 text-xs">
-                                  {transaction.coupon_name}
-                                </span>
-                              ) : (
-                                <span className="text-gray-400 text-xs">—</span> // Simple dash instead of line
-                              )}
-                            </div>
-                            <span>•</span>
-                            <span>
-                              {formatDateTime(
-                                transaction.date,
-                                transaction.time
-                              )}
-                            </span>
-                          </div>
-                        </div>
+                        <div className="h-4 bg-gray-200 rounded w-16"></div>
                       </div>
                     ))}
-                </div>
-              )}
+                  </div>
+                ) : (
+                  <div className="space-y-3 flex-1 overflow-hidden">
+                    {(Array.isArray(transactions) ? transactions : [])
+                      .slice(0, 7)
+                      .map((transaction, index) => (
+                        <div
+                          key={index}
+                          className="flex justify-between items-center py-3 border-b border-gray-100 last:border-b-0"
+                        >
+                          <div className="flex-1 min-w-0">
+                            <div className="flex items-center gap-2 mb-1">
+                              <div className="font-semibold text-gray-900">
+                                ${transaction.amount.toFixed(2)}{" "}
+                                {transaction.currency || "USD"}
+                              </div>
+                              {transaction.status && (
+                                <Tooltip>
+                                  <TooltipTrigger asChild>
+                                    <span
+                                      className={`px-2 py-1 text-xs rounded-full cursor-default ${
+                                        transaction.status === "succeeded"
+                                          ? "bg-green-100 text-green-800"
+                                          : transaction.status === "pending"
+                                          ? "bg-yellow-100 text-yellow-800"
+                                          : "bg-red-100 text-red-800"
+                                      }`}
+                                    >
+                                      {transaction.status}
+                                    </span>
+                                  </TooltipTrigger>
+                                  {transaction.status !== "succeeded" && (
+                                    <TooltipContent side="top" align="start">
+                                      <div className="text-xs max-w-xs">
+                                        {transaction.failure_reason ||
+                                          "No error reason available from Stripe."}
+                                        {transaction.failure_code && (
+                                          <div className="mt-1 text-[10px] text-gray-400">
+                                            Code: {transaction.failure_code}
+                                          </div>
+                                        )}
+                                      </div>
+                                    </TooltipContent>
+                                  )}
+                                </Tooltip>
+                              )}
+                            </div>
+                            <div className="text-sm text-gray-600 truncate">
+                              {transaction.customer_name || transaction.email}
+                            </div>
+                            {transaction.customer_name && (
+                              <div className="text-xs text-gray-400 truncate">
+                                {transaction.email}
+                              </div>
+                            )}
+                          </div>
+                          <div className="flex flex-col items-end text-sm text-gray-500 ml-4 flex-shrink-0">
+                            <div className="flex items-center gap-3 text-sm text-gray-500 ml-4 flex-shrink-0">
+                              <div className="flex flex-col items-center">
+                                <span className="font-semibold text-gray-700 text-xs">
+                                  Cupón:
+                                </span>
+                                {transaction.coupon_name ? (
+                                  <span className="font-bold text-blue-600 text-xs">
+                                    {transaction.coupon_name}
+                                  </span>
+                                ) : (
+                                  <span className="text-gray-400 text-xs">
+                                    —
+                                  </span> // Simple dash instead of line
+                                )}
+                              </div>
+                              <span>•</span>
+                              <span>
+                                {formatDateTime(
+                                  transaction.date,
+                                  transaction.time
+                                )}
+                              </span>
+                            </div>
+                          </div>
+                        </div>
+                      ))}
+                  </div>
+                )}
+              </div>
             </div>
           </div>
-        </div>
 
-        {/* Footer */}
-        <div className="flex justify-end items-center mt-8">
-          <div className="text-gray-500">
-            Última actualización:{" "}
-            {lastUpdated.toLocaleTimeString("en-US", {
-              hour: "2-digit",
-              minute: "2-digit",
-            })}
+          {/* Footer */}
+          <div className="flex justify-end items-center mt-8">
+            <div className="text-gray-500">
+              Última actualización:{" "}
+              {lastUpdated.toLocaleTimeString("en-US", {
+                hour: "2-digit",
+                minute: "2-digit",
+              })}
+            </div>
           </div>
         </div>
       </div>
-    </div>
+    </TooltipProvider>
   );
 }
