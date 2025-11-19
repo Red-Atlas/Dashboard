@@ -58,6 +58,7 @@ interface Transaction {
   status?: string;
   customer_name?: string;
   coupon_name?: string;
+  amount_saved?: number | null;
   failure_reason?: string | null;
   failure_code?: string | null;
 }
@@ -183,7 +184,7 @@ function MetricCard({
                 {formatEuropeanNumber(currencyBreakdown.copInUSD)} USD)
               </div>
               <div className="text-gray-400">
-                Taxa: 1 USD = {currencyBreakdown.exchangeRate.toLocaleString()}{" "}
+                Tasa: 1 USD = {currencyBreakdown.exchangeRate.toLocaleString()}{" "}
                 COP
               </div>
             </div>
@@ -789,21 +790,24 @@ export default function BusinessOverview() {
                             )}
                           </div>
                           <div className="flex flex-col items-end text-sm text-gray-500 ml-4 flex-shrink-0">
-                            <div className="flex items-center gap-3 text-sm text-gray-500 ml-4 flex-shrink-0">
-                              <div className="flex flex-col items-center">
-                                <span className="font-semibold text-gray-700 text-xs">
-                                  Cupón:
-                                </span>
-                                {transaction.coupon_name ? (
+                            <div className="flex items-center gap-3 text-sm text-gray-500">
+                              {transaction.coupon_name ? (
+                                <div className="flex flex-col items-end">
                                   <span className="font-bold text-blue-600 text-xs">
                                     {transaction.coupon_name}
                                   </span>
-                                ) : (
-                                  <span className="text-gray-400 text-xs">
-                                    —
-                                  </span> // Simple dash instead of line
-                                )}
-                              </div>
+                                  {transaction.amount_saved && (
+                                    <span className="text-green-600 text-[10px] font-semibold">
+                                      Ahorró $
+                                      {transaction.amount_saved.toFixed(2)}
+                                    </span>
+                                  )}
+                                </div>
+                              ) : (
+                                <span className="text-gray-400 text-xs">
+                                  Sin cupón
+                                </span>
+                              )}
                               <span>•</span>
                               <span>
                                 {formatDateTime(

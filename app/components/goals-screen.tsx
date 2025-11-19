@@ -8,7 +8,6 @@ interface GoalsData {
   paidSubscriptions: number;
   pageViews: number;
   netRevenue: number;
-  dannyCoupons: number;
 }
 
 interface GoalCardProps {
@@ -118,7 +117,6 @@ export default function GoalsScreen() {
     paidSubscriptions: 0,
     pageViews: 0,
     netRevenue: 0,
-    dannyCoupons: 0,
   });
   const [loading, setLoading] = useState(true);
   const [mounted, setMounted] = useState(false);
@@ -150,7 +148,6 @@ export default function GoalsScreen() {
           (atlasData.data?.users?.externalPayments || 0), // Including external subscriptions
         pageViews: totalPageViews,
         netRevenue: (revenue.totalRevenue || 0) + 3000, // Including external revenue
-        dannyCoupons: atlasData.data?.coupons?.daniel?.total || 0,
       });
     } catch (error) {
       console.error("Failed to fetch goals data:", error);
@@ -234,7 +231,7 @@ export default function GoalsScreen() {
             <p className="text-lg text-gray-600">Objetivos del negocio 2025</p>
           </div>
 
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-2 gap-6">
             <GoalCard
               title="Usuarios Registrados"
               current={goalsData.registeredUsers}
@@ -266,14 +263,6 @@ export default function GoalsScreen() {
               format="currency"
               color="green"
             />
-
-            <GoalCard
-              title="Cupones de Danny"
-              current={goalsData.dannyCoupons}
-              target={200}
-              format="number"
-              color="blue"
-            />
           </div>
 
           {/* Summary Section */}
@@ -281,7 +270,7 @@ export default function GoalsScreen() {
             <h2 className="text-2xl font-bold text-gray-900 mb-6">
               Resumen de Progreso
             </h2>
-            <div className="grid grid-cols-2 md:grid-cols-4 gap-6">
+            <div className="grid grid-cols-2 md:grid-cols-3 gap-6">
               <div className="text-center">
                 <div className="text-3xl font-bold text-blue-600">
                   {((goalsData.registeredUsers / 42000) * 100).toFixed(1)}%
@@ -299,12 +288,6 @@ export default function GoalsScreen() {
                   {((goalsData.netRevenue / 50000) * 100).toFixed(1)}%
                 </div>
                 <div className="text-sm text-gray-600">Ventas Netas</div>
-              </div>
-              <div className="text-center">
-                <div className="text-3xl font-bold text-blue-600">
-                  {((goalsData.dannyCoupons / 200) * 100).toFixed(1)}%
-                </div>
-                <div className="text-sm text-gray-600">Cupones Danny</div>
               </div>
             </div>
           </div>

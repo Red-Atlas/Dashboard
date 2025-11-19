@@ -28,6 +28,10 @@ export async function GET() {
       charges.data.map(async (charge) => {
         let customerName = null;
         let customerEmail = null;
+        let couponName = null;
+        let couponAmountOff = null;
+        let couponPercentOff = null;
+        let amountSaved = 0;
 
         // Get customer details if available
         if (charge.customer) {
@@ -41,6 +45,39 @@ export async function GET() {
             }
           } catch (error) {
             console.warn("Could not retrieve customer:", error);
+          }
+        }
+
+        // Get invoice details to find coupon information
+        const chargeWithInvoice = charge as any;
+        if (chargeWithInvoice.invoice) {
+          try {
+            const invoice = await stripe.invoices.retrieve(
+              chargeWithInvoice.invoice as string
+            );
+
+            // Check if invoice has discounts (it's an array in newer API)
+            if (invoice.discounts && invoice.discounts.length > 0) {
+              const discount = invoice.discounts[0] as any;
+              if (discount.coupon) {
+                const coupon = discount.coupon as any;
+                couponName = coupon.name || coupon.id;
+
+                // Calculate amount saved
+                if (coupon.amount_off) {
+                  // Fixed amount discount
+                  couponAmountOff = coupon.amount_off / 100;
+                  amountSaved = couponAmountOff;
+                } else if (coupon.percent_off) {
+                  // Percentage discount
+                  couponPercentOff = coupon.percent_off;
+                  // Calculate based on subtotal before discount
+                  amountSaved = (invoice.subtotal * coupon.percent_off) / 10000;
+                }
+              }
+            }
+          } catch (error) {
+            console.warn("Could not retrieve invoice:", error);
           }
         }
 
@@ -92,7 +129,9 @@ export async function GET() {
           time: puertoRicoTime,
           currency: charge.currency.toUpperCase(),
           status: charge.status,
-          coupon_name: null,
+          coupon_name: couponName,
+          amount_saved:
+            amountSaved > 0 ? Math.round(amountSaved * 100) / 100 : null,
           failure_reason: failureReason,
           failure_code: charge.failure_code || null,
         };
