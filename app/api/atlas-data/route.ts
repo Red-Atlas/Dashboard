@@ -25,7 +25,7 @@ export async function GET() {
     }
 
     // Cache expirado ou não existe, buscar dados
-    const response = await fetch("https://apiv2.atlas.red/api/dashboard", {
+    const response = await fetch("https://api.atlas.red/api/dashboard", {
       headers: {
         "x-admin-key": process.env.X_ADMIN_KEY || "",
       },
