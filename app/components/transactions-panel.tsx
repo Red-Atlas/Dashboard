@@ -50,6 +50,8 @@ interface TransactionsResponse {
   total: number;
   totalPages: number;
   summary: Summary;
+  /** Client-side marker: the query this payload answers. */
+  appliedQuery?: string;
 }
 
 function formatDateTime(dateString: string, timeString?: string) {
@@ -191,7 +193,9 @@ export default function TransactionsPanel({
         if (!result.ok) throw new Error(`HTTP ${result.status}`);
 
         const payload: TransactionsResponse = await result.json();
-        setResponse(payload);
+        // Remember which query produced this payload so the header never pairs
+        // a new search term with the previous result count.
+        setResponse({ ...payload, appliedQuery: query });
         setError(null);
 
         // Only the unfiltered first page is a reliable "newest" signal.
@@ -230,6 +234,9 @@ export default function TransactionsPanel({
   const summary = response?.summary;
   const rows = response?.data ?? [];
 
+  // True while the displayed payload still answers a previous search term.
+  const isStale = response != null && (response.appliedQuery ?? "") !== query;
+
   // Refunds are the thing that used to be invisible, so call them out.
   const refundCount = summary
     ? summary.refunded + summary.partiallyRefunded
@@ -247,7 +254,10 @@ export default function TransactionsPanel({
           Últimas transacciones
         </h3>
         <span className="text-xs text-gray-500 tabular-nums">
-          {query
+          {/* Held back until the payload matches the current query. */}
+          {isStale
+            ? "Buscando…"
+            : query
             ? `${total.toLocaleString("en-US")} resultado${
                 total === 1 ? "" : "s"
               }`
@@ -337,8 +347,10 @@ export default function TransactionsPanel({
           </div>
         ) : (
           <div
-            // Dim rather than blank the list while a new page loads.
-            className={`transition-opacity ${loading ? "opacity-50" : ""}`}
+            // Dim rather than blank the list while a new page or search loads.
+            className={`transition-opacity ${
+              loading || isStale ? "opacity-40" : ""
+            }`}
           >
             {rows.map((transaction) => {
               const isReversed =
@@ -393,7 +405,7 @@ export default function TransactionsPanel({
       {/* Pagination: 10 per page, resolved entirely on the server. */}
       <div className="flex items-center justify-between pt-3 mt-1 border-t border-gray-100">
         <span className="text-xs text-gray-500 tabular-nums">
-          Página {response?.page ?? page} de {totalPages}
+          {isStale ? "…" : `Página ${response?.page ?? page} de ${totalPages}`}
         </span>
         <div className="flex items-center gap-1">
           <button
