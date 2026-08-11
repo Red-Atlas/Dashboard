@@ -10,12 +10,14 @@ export async function GET() {
     });
   } catch (error) {
     console.error('Error en page-views-by-day:', error);
-    
-    const data = [];
 
-    return Response.json({
-      data,
-      timestamp: new Date().toISOString(),
-    });
+    return Response.json(
+      {
+        data: [] as Array<{ date: string; views: number; fullDate?: string }>,
+        error: 'Failed to fetch page views',
+        timestamp: new Date().toISOString(),
+      },
+      { status: 502 }
+    );
   }
 }

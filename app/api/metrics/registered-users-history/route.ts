@@ -1,38 +1,26 @@
-import { getRegisteredUsers } from '@/lib/google-analytics';
+import { NextResponse } from "next/server";
+import { getRegisteredUsersByDay } from "@/lib/google-analytics";
 
+export const dynamic = "force-dynamic";
+
+/**
+ * Real per-day active users for the last 7 days. Previously this called
+ * getRegisteredUsers() (a single 28-day total) once per day and added a random
+ * ±50 to each point, so the whole trend line was invented.
+ */
 export async function GET() {
   try {
-    const today = new Date();
-    const historicalData = [];
+    const data = await getRegisteredUsersByDay();
 
-    // Get registered users data for the last 7 days
-    for (let i = 6; i >= 0; i--) {
-      const date = new Date(today);
-      date.setDate(date.getDate() - i);
-      
-             // Get current registered users from Google Analytics
-       const currentRegisteredUsers = await getRegisteredUsers();
-       const baseCount = currentRegisteredUsers.value || 0;
-       const variation = Math.floor(Math.random() * 100) - 50; // ±50 variation (smaller)
-       const historicalCount = Math.max(0, baseCount + variation);
-      
-      historicalData.push({
-        date: date.toLocaleDateString('es-ES', { day: 'numeric', month: 'short' }),
-        value: historicalCount,
-        fullDate: date.toISOString().split('T')[0]
-      });
-    }
-
-    return Response.json({
-      data: historicalData,
-      timestamp: new Date().toISOString(),
-    });
+    return NextResponse.json(
+      { data, timestamp: new Date().toISOString() },
+      { headers: { "Cache-Control": "private, no-store" } }
+    );
   } catch (error) {
-    console.error('Error en registered-users-history:', error);
-    
-    return Response.json({
-      data: [],
-      timestamp: new Date().toISOString(),
-    });
+    console.error("Error en registered-users-history:", error);
+    return NextResponse.json(
+      { data: [], error: "Failed to fetch registered users history" },
+      { status: 502 }
+    );
   }
 }

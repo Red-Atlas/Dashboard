@@ -1,88 +1,89 @@
-import Stripe from "stripe";
+import type Stripe from "stripe";
+import { getAllSubscriptions, getStripe } from "@/lib/stripe";
 
-const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!, {
-  apiVersion: "2025-06-30.basil",
-});
+export const dynamic = "force-dynamic";
 
 export async function GET() {
+  const stripe = getStripe();
+  if (!stripe) {
+    return Response.json(
+      { error: "Stripe secret key not configured" },
+      { status: 500 }
+    );
+  }
+
   try {
-    // Obtener TODAS las suscripciones activas usando paginación
-    let allActiveSubscriptions: Stripe.Subscription[] = [];
-    let hasMore = true;
-    let startingAfter: string | undefined = undefined;
+    // One shared, cached walk of the subscription list — this route and
+    // /stripe-subscriptions-history were each paginating ~800 subscriptions
+    // separately on every refresh (~6s apiece).
+    const all = await getAllSubscriptions(stripe);
 
-    while (hasMore) {
-      const subscriptionsBatch: Stripe.ApiList<Stripe.Subscription> =
-        await stripe.subscriptions.list({
-          status: "active",
-          limit: 100,
-          starting_after: startingAfter,
-        });
+    const activeSubscriptions = all.filter((sub) => sub.status === "active");
 
-      allActiveSubscriptions = allActiveSubscriptions.concat(
-        subscriptionsBatch.data
-      );
-      hasMore = subscriptionsBatch.has_more;
+    const thirtyDaysAgo = Math.floor(Date.now() / 1000) - 30 * 24 * 60 * 60;
+    const canceledLastMonth = all.filter(
+      (sub) =>
+        sub.status === "canceled" &&
+        (sub.ended_at ?? sub.canceled_at ?? 0) >= thirtyDaysAgo
+    );
 
-      if (hasMore && subscriptionsBatch.data.length > 0) {
-        startingAfter =
-          subscriptionsBatch.data[subscriptionsBatch.data.length - 1].id;
-      }
-    }
-
-    // Obtener suscripciones canceladas del último mes
-    const canceledSubscriptions = await stripe.subscriptions.list({
-      status: "canceled",
-      limit: 200,
-      created: {
-        gte: Math.floor(Date.now() / 1000) - 30 * 24 * 60 * 60, // Último mes
-      },
-    });
-
-    // Calcular métricas
-    const totalActive = allActiveSubscriptions.length;
-    const totalCanceled = canceledSubscriptions.data.length;
+    const totalActive = activeSubscriptions.length;
+    const totalCanceled = canceledLastMonth.length;
     const churnRate =
       totalActive > 0
         ? (totalCanceled / (totalActive + totalCanceled)) * 100
         : 0;
 
-    // Calcular MRR (Monthly Recurring Revenue)
-    let mrr = 0;
-    allActiveSubscriptions.forEach((sub) => {
-      if (sub.items.data[0]?.price?.recurring?.interval === "month") {
-        mrr += sub.items.data[0]?.price?.unit_amount || 0;
-      } else if (sub.items.data[0]?.price?.recurring?.interval === "year") {
-        mrr += (sub.items.data[0]?.price?.unit_amount || 0) / 12;
-      }
-    });
-    mrr = mrr / 100; // Convertir de centavos a dólares
+    // MRR in USD, with yearly plans amortised over 12 months. COP-priced
+    // plans have to be converted or they swamp the total (a 59,900 COP plan
+    // is ~$15, not $59,900).
+    const COP_TO_USD_RATE = 4000;
+    const toUSD = (cents: number, currency: string) =>
+      currency.toUpperCase() === "COP"
+        ? cents / 100 / COP_TO_USD_RATE
+        : cents / 100;
 
-    // Calcular desglose por tipo de plan
+    let mrr = 0;
     let monthlyCount = 0;
     let yearlyCount = 0;
-    allActiveSubscriptions.forEach((sub) => {
-      const interval = sub.items.data[0]?.price?.recurring?.interval;
-      if (interval === "month") monthlyCount++;
-      else if (interval === "year") yearlyCount++;
-    });
 
-    // Obtener últimas suscripciones
-    const latestSubscriptions = await stripe.subscriptions.list({
+    for (const sub of activeSubscriptions) {
+      const price = sub.items.data[0]?.price;
+      const amountUSD = toUSD(price?.unit_amount || 0, price?.currency || "usd");
+
+      if (price?.recurring?.interval === "month") {
+        mrr += amountUSD;
+        monthlyCount++;
+      } else if (price?.recurring?.interval === "year") {
+        mrr += amountUSD / 12;
+        yearlyCount++;
+      }
+    }
+
+    // Five most recent subscriptions, newest first. Customer details are
+    // expanded only for these, not for the whole cached list.
+    const latest = await stripe.subscriptions.list({
       limit: 5,
       expand: ["data.customer"],
     });
 
-    const formattedSubscriptions = latestSubscriptions.data.map((sub) => ({
-      id: sub.id,
-      customer_name: (sub.customer as Stripe.Customer)?.name || "Unknown",
-      customer_email: (sub.customer as Stripe.Customer)?.email || "",
-      amount: (sub.items.data[0]?.price?.unit_amount || 0) / 100,
-      currency: sub.items.data[0]?.price?.currency || "usd",
-      status: sub.status,
-      created: new Date(sub.created * 1000).toISOString(),
-      product_name: sub.items.data[0]?.price?.nickname || "Subscription",
-    }));
+    const formattedSubscriptions = latest.data.map((sub) => {
+      const customer =
+        sub.customer && typeof sub.customer !== "string"
+          ? (sub.customer as Stripe.Customer)
+          : null;
+
+      return {
+        id: sub.id,
+        customer_name: customer?.name || "Unknown",
+        customer_email: customer?.email || "",
+        amount: (sub.items.data[0]?.price?.unit_amount || 0) / 100,
+        currency: sub.items.data[0]?.price?.currency || "usd",
+        status: sub.status,
+        created: new Date(sub.created * 1000).toISOString(),
+        product_name: sub.items.data[0]?.price?.nickname || "Subscription",
+      };
+    });
 
     return Response.json({
       active_count: totalActive,
@@ -96,34 +97,11 @@ export async function GET() {
   } catch (error) {
     console.error("Error fetching Stripe subscriptions:", error);
 
-    // Fallback con datos mock realistas
-    return Response.json({
-      active_count: Math.floor(Math.random() * 500) + 200,
-      churn_rate: Number((Math.random() * 5 + 2).toFixed(2)), // 2-7%
-      mrr: Number((Math.random() * 10000 + 5000).toFixed(2)), // $5,000-$15,000
-      latest_subscriptions: Array.from({ length: 5 }, (_, i) => ({
-        id: `sub_${Math.random().toString(36).substr(2, 9)}`,
-        customer_name: [
-          "John Doe",
-          "Jane Smith",
-          "Alice Johnson",
-          "Bob Wilson",
-          "Carol Brown",
-        ][i],
-        customer_email: [
-          "john@example.com",
-          "jane@example.com",
-          "alice@example.com",
-          "bob@example.com",
-          "carol@example.com",
-        ][i],
-        amount: Math.floor(Math.random() * 100) + 29,
-        currency: "usd",
-        status: "active",
-        created: new Date(Date.now() - i * 24 * 60 * 60 * 1000).toISOString(),
-        product_name: "RED Atlas Professional",
-      })),
-      timestamp: new Date().toISOString(),
-    });
+    // This used to return randomised numbers and fake customer names, which
+    // looked like real data on the dashboard. Fail visibly instead.
+    return Response.json(
+      { error: "Failed to fetch subscriptions from Stripe" },
+      { status: 502 }
+    );
   }
 }

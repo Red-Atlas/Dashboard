@@ -2,6 +2,8 @@
 
 import { useState, useEffect } from "react";
 import Image from "next/image";
+import { apiCache } from "@/app/utils/apiCache";
+import { CACHE_DURATION_MS } from "@/app/config/cache";
 
 interface GoalsData {
   registeredUsers: number;
@@ -124,30 +126,32 @@ export default function GoalsScreen() {
   const fetchGoalsData = async () => {
     setLoading(true);
     try {
-      const [atlasData, subscriptions, pageViews, revenue] = await Promise.all([
-        fetch("/api/atlas-data").then((r) => r.json()),
-        fetch("/api/metrics/stripe-subscriptions").then((r) => r.json()),
-        fetch("/api/metrics/page-views-by-hour").then((r) => r.json()),
-        fetch("/api/metrics/stripe-revenue").then((r) => r.json()),
-      ]);
+      const [registeredUsers, subscriptions, pageViews, revenue] =
+        await Promise.all([
+          apiCache.fetch("/api/metrics/registered-users", CACHE_DURATION_MS),
+          apiCache.fetch("/api/metrics/stripe-subscriptions", CACHE_DURATION_MS),
+          apiCache.fetch("/api/metrics/page-views-by-hour", CACHE_DURATION_MS),
+          apiCache.fetch("/api/metrics/stripe-revenue", CACHE_DURATION_MS),
+        ]);
 
-      // Calculate total page views from the last 7 days
       const totalPageViews =
         pageViews.data
           ?.slice(-7)
-          .reduce((sum: number, day: any) => sum + day.views, 0) || 0;
-
-      // Calculate total registered users from Atlas DB (PR + COL)
-      const totalRegisteredUsers =
-        (atlasData.data?.users?.pri || 0) + (atlasData.data?.users?.col || 0);
+          .reduce((sum: number, day: any) => sum + (day.views || 0), 0) || 0;
 
       setGoalsData({
-        registeredUsers: totalRegisteredUsers,
-        paidSubscriptions:
-          (subscriptions.active_count || 0) +
-          (atlasData.data?.users?.externalPayments || 0), // Including external subscriptions
+        /*
+         * Was reading atlasData.data.users.pri/col from the Atlas dashboard
+         * endpoint. That endpoint now needs a JWT we don't have, and the public
+         * one carries no user counts — so this goal sat at 0. Google Analytics
+         * already provides the figure the other screens use.
+         */
+        registeredUsers: registeredUsers.value || 0,
+        // 15 external subscriptions, same constant as the overview card.
+        paidSubscriptions: (subscriptions.active_count || 0) + 15,
         pageViews: totalPageViews,
-        netRevenue: (revenue.totalRevenue || 0) + 3000, // Including external revenue
+        // $3,000 external revenue, same as the overview card.
+        netRevenue: (revenue.totalRevenue || 0) + 3000,
       });
     } catch (error) {
       console.error("Failed to fetch goals data:", error);
