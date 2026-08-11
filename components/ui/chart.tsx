@@ -102,9 +102,24 @@ ${colorConfig
 
 const ChartTooltip = RechartsPrimitive.Tooltip
 
+/**
+ * Recharts 3 supplies `active`, `payload` and `label` to tooltip content from
+ * context rather than through the Tooltip prop type, so they have to be
+ * declared here explicitly.
+ */
+type TooltipContentInjectedProps = {
+  active?: boolean
+  payload?: any[]
+  label?: any
+}
+
 const ChartTooltipContent = React.forwardRef<
   HTMLDivElement,
-  React.ComponentProps<typeof RechartsPrimitive.Tooltip> &
+  Omit<
+    React.ComponentProps<typeof RechartsPrimitive.Tooltip>,
+    keyof TooltipContentInjectedProps
+  > &
+    TooltipContentInjectedProps &
     React.ComponentProps<"div"> & {
       hideLabel?: boolean
       hideIndicator?: boolean
@@ -260,11 +275,13 @@ const ChartLegend = RechartsPrimitive.Legend
 
 const ChartLegendContent = React.forwardRef<
   HTMLDivElement,
-  React.ComponentProps<"div"> &
-    Pick<RechartsPrimitive.LegendProps, "payload" | "verticalAlign"> & {
-      hideIcon?: boolean
-      nameKey?: string
-    }
+  React.ComponentProps<"div"> & {
+    // Also context-injected in Recharts 3, same as the tooltip above.
+    payload?: any[]
+    verticalAlign?: RechartsPrimitive.LegendProps["verticalAlign"]
+    hideIcon?: boolean
+    nameKey?: string
+  }
 >(
   (
     { className, hideIcon = false, payload, verticalAlign = "bottom", nameKey },

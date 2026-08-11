@@ -854,3 +854,48 @@ export async function getPageViewsByPath() {
     return [];
   }
 }
+
+/**
+ * Active users per day for the last 7 days.
+ *
+ * Added so /api/metrics/registered-users-history can report real numbers — it
+ * used to take today's 28-day total and apply a random ±50 jitter per day.
+ */
+export async function getRegisteredUsersByDay() {
+  const client = getAnalyticsClient();
+
+  if (!GA_PROPERTY_ID) {
+    throw new Error("GA_PROPERTY_ID no está configurado");
+  }
+
+  const [response] = await client.runReport({
+    property: `properties/${GA_PROPERTY_ID}`,
+    dateRanges: [{ startDate: "6daysAgo", endDate: "today" }],
+    dimensions: [{ name: "date" }],
+    metrics: [{ name: "activeUsers" }],
+    orderBys: [{ dimension: { dimensionName: "date" } }],
+  });
+
+  return (
+    response.rows?.map((row) => {
+      // GA returns the dimension as YYYYMMDD.
+      const raw = row.dimensionValues?.[0]?.value || "";
+      const year = Number(raw.substring(0, 4));
+      const month = Number(raw.substring(4, 6));
+      const day = Number(raw.substring(6, 8));
+      const date = new Date(year, month - 1, day);
+
+      return {
+        date: date.toLocaleDateString("es-ES", {
+          day: "numeric",
+          month: "short",
+        }),
+        value: parseInt(row.metricValues?.[0]?.value || "0", 10),
+        fullDate: `${raw.substring(0, 4)}-${raw.substring(
+          4,
+          6
+        )}-${raw.substring(6, 8)}`,
+      };
+    }) || []
+  );
+}

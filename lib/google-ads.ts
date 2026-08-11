@@ -1,6 +1,6 @@
 // Google Ads API - Configuración opcional
 let client: any = null;
-let CUSTOMER_ID: string | undefined = process.env.GOOGLE_ADS_CUSTOMER_ID;
+const CUSTOMER_ID: string | undefined = process.env.GOOGLE_ADS_CUSTOMER_ID;
 
 // Solo inicializar si tenemos todas las credenciales
 if (
@@ -9,6 +9,7 @@ if (
   process.env.GOOGLE_ADS_DEVELOPER_TOKEN
 ) {
   try {
+    // eslint-disable-next-line @typescript-eslint/no-require-imports -- loaded lazily so the app boots without Google Ads credentials
     const { GoogleAdsApi } = require("google-ads-api");
     client = new GoogleAdsApi({
       client_id: process.env.GOOGLE_ADS_CLIENT_ID,

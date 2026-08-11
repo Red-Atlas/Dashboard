@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useCallback, useEffect, useState } from "react";
 import {
   Line,
   LineChart,
@@ -16,12 +16,9 @@ import { ChartContainer } from "@/components/ui/chart";
 import Image from "next/image";
 import { apiCache } from "@/app/utils/apiCache";
 import { CACHE_DURATION_MS, CACHE_CONFIG } from "@/app/config/cache";
-import {
-  Tooltip,
-  TooltipContent,
-  TooltipProvider,
-  TooltipTrigger,
-} from "@/components/ui/tooltip";
+import { TooltipProvider } from "@/components/ui/tooltip";
+import TransactionsPanel from "./transactions-panel";
+import { ChartCardSkeleton, MetricCardSkeleton } from "./skeletons";
 
 interface BusinessMetrics {
   activeUsers: number;
@@ -49,20 +46,6 @@ interface SubscriptionData {
   yearly_count: number;
 }
 
-interface Transaction {
-  amount: number;
-  email: string;
-  date: string;
-  time?: string;
-  currency?: string;
-  status?: string;
-  customer_name?: string;
-  coupon_name?: string;
-  amount_saved?: number | null;
-  failure_reason?: string | null;
-  failure_code?: string | null;
-}
-
 interface RevenueMetrics {
   totalRevenue: number;
   transactionCount: number;
@@ -80,6 +63,10 @@ interface RevenueMetrics {
     cop: number;
     copInUSD: number;
     exchangeRate: number;
+  };
+  refunds?: {
+    amount: number;
+    count: number;
   };
 }
 
@@ -100,6 +87,7 @@ interface MetricCardProps {
     copInUSD: number;
     exchangeRate: number;
   };
+  refundNote?: string;
 }
 
 // Helper function for American number formatting (thousands with , and decimals with .)
@@ -127,6 +115,7 @@ function MetricCard({
   externalNote,
   goal,
   currencyBreakdown,
+  refundNote,
 }: MetricCardProps) {
   const textColor = color === "green" ? "text-green-600" : "text-gray-900";
 
@@ -154,63 +143,62 @@ function MetricCard({
     );
   };
 
+  if (loading) return <MetricCardSkeleton />;
+
   return (
     <div className="bg-white rounded-2xl shadow-lg p-6 relative">
-      {loading ? (
-        <div className="animate-pulse">
-          <div className="h-16 bg-gray-200 rounded mb-2"></div>
-          <div className="h-6 bg-gray-200 rounded w-3/4"></div>
-        </div>
-      ) : (
-        <>
-          <div
-            className={`text-5xl font-bold ${textColor} mb-2 flex items-center`}
-          >
-            {formatValue(value)}
-            {goal && (
-              <span className="text-lg font-normal text-gray-500 ml-2">
-                (meta: {formatEuropeanInteger(goal)})
-              </span>
-            )}
-            {percentageChange !== undefined &&
-              formatPercentageChange(percentageChange)}
+      <div className={`text-5xl font-bold ${textColor} mb-2 flex items-center`}>
+        {formatValue(value)}
+        {goal && (
+          <span className="text-lg font-normal text-gray-500 ml-2">
+            (meta: {formatEuropeanInteger(goal)})
+          </span>
+        )}
+        {percentageChange !== undefined &&
+          formatPercentageChange(percentageChange)}
+      </div>
+      <div className="text-lg text-gray-700">{title}</div>
+
+      {currencyBreakdown && (
+        <div className="text-xs text-gray-600 mt-2 space-y-1">
+          <div>💵 USD: ${formatEuropeanNumber(currencyBreakdown.usd)}</div>
+          <div>
+            🇨🇴 COP: ${formatEuropeanNumber(currencyBreakdown.cop)} (≈ $
+            {formatEuropeanNumber(currencyBreakdown.copInUSD)} USD)
           </div>
-          <div className="text-lg text-gray-700">{title}</div>
-          {currencyBreakdown && (
-            <div className="text-xs text-gray-600 mt-2 space-y-1">
-              <div>💵 USD: ${formatEuropeanNumber(currencyBreakdown.usd)}</div>
-              <div>
-                🇨🇴 COP: ${formatEuropeanNumber(currencyBreakdown.cop)} (≈ $
-                {formatEuropeanNumber(currencyBreakdown.copInUSD)} USD)
-              </div>
-              <div className="text-gray-400">
-                Tasa: 1 USD = {currencyBreakdown.exchangeRate.toLocaleString()}{" "}
-                COP
-              </div>
-            </div>
-          )}
-          {subtitle && (
-            <div className="text-xs text-gray-500 absolute bottom-4 right-6">
-              {subtitle}
-            </div>
-          )}
-          {externalNote && title === "Volumen de ventas neto" && (
-            <div className="text-xs text-gray-500 absolute top-4 right-6">
-              {externalNote}
-            </div>
-          )}
-          {externalNote && title === "Suscripciones Activas" && (
-            <div className="text-xs text-gray-500 absolute top-4 right-6">
-              ({externalNote})
-            </div>
-          )}
-        </>
+          <div className="text-gray-400">
+            Tasa: 1 USD = {currencyBreakdown.exchangeRate.toLocaleString()} COP
+          </div>
+        </div>
+      )}
+
+      {/* Refunds used to be invisible here even though they reduce the total. */}
+      {refundNote && (
+        <div className="text-xs text-amber-700 mt-2">{refundNote}</div>
+      )}
+
+      {subtitle && (
+        <div className="text-xs text-gray-500 absolute bottom-4 right-6">
+          {subtitle}
+        </div>
+      )}
+      {externalNote && (
+        <div className="text-xs text-gray-500 absolute top-4 right-6">
+          {title === "Suscripciones Activas" ? `(${externalNote})` : externalNote}
+        </div>
       )}
     </div>
   );
 }
 
-export default function BusinessOverview() {
+interface BusinessOverviewProps {
+  /** Lets the panel pause the carousel while someone is searching. */
+  onInteraction?: () => void;
+}
+
+export default function BusinessOverview({
+  onInteraction,
+}: BusinessOverviewProps) {
   const [metrics, setMetrics] = useState<BusinessMetrics>({
     activeUsers: 0,
     activeUsersPercentageChange: 0,
@@ -218,7 +206,6 @@ export default function BusinessOverview() {
     pageViewsYesterday: 0,
     pageViewsByDay: [],
   });
-  const [transactions, setTransactions] = useState<Transaction[]>([]);
   const [subscriptions, setSubscriptions] = useState<SubscriptionData | null>(
     null
   );
@@ -236,34 +223,28 @@ export default function BusinessOverview() {
     activeUsers: true,
     registeredUsers: true,
     pageViews: true,
-    transactions: true,
     revenue: true,
     subscriptions: true,
   });
   const [lastUpdated, setLastUpdated] = useState<Date>(new Date());
-  const [previousTransactionCount, setPreviousTransactionCount] =
-    useState<number>(0);
   const [lastTransactionTime, setLastTransactionTime] = useState<Date>(
     new Date()
   );
   const [cricketsPlayed, setCricketsPlayed] = useState<boolean>(false);
   const [previousSubscriptionCount, setPreviousSubscriptionCount] =
     useState<number>(0);
-  const [audioEnabled, setAudioEnabled] = useState<boolean>(true);
 
-  // Function to enable audio automatically
+  /** Counter the transactions panel watches to re-poll on our interval. */
+  const [refreshKey, setRefreshKey] = useState(0);
+
+  // Browsers block autoplay until a gesture; playing a silent clip early makes
+  // the later notification sounds more likely to be allowed through.
   const enableAudio = () => {
-    // Create a silent audio to "unlock" audio playback
     const silentAudio = new Audio();
     silentAudio.volume = 0;
-    silentAudio
-      .play()
-      .then(() => {
-        setAudioEnabled(true);
-      })
-      .catch(() => {
-        // Audio enable failed
-      });
+    silentAudio.play().catch(() => {
+      // Still blocked — the sounds just won't play. Not worth surfacing.
+    });
   };
 
   // Function to play notification sound
@@ -353,50 +334,14 @@ export default function BusinessOverview() {
     }
   };
 
-  const fetchTransactions = async () => {
-    setLoading((prev) => ({ ...prev, transactions: true }));
-    try {
-      const response = await fetch("/api/metrics/stripe-transactions", {
-        cache: "no-store", // Sempre buscar dados frescos
-      });
-      const data = await response.json();
-
-      // Asegurar que data sea un array
-      const newTransactions = Array.isArray(data) ? data : [];
-
-      // Detectar si hay nuevas transacciones comparando IDs o fechas
-      if (newTransactions.length > 0 && transactions.length > 0) {
-        // Comparar la primera transacción (más reciente) con la anterior
-        const latestNewTransaction = newTransactions[0];
-        const latestCurrentTransaction = transactions[0];
-
-        // Si las fechas son diferentes, es una nueva transacción
-        if (
-          latestNewTransaction.date !== latestCurrentTransaction.date ||
-          latestNewTransaction.time !== latestCurrentTransaction.time
-        ) {
-          playNotificationSound();
-          setLastTransactionTime(new Date());
-          setCricketsPlayed(false);
-        }
-      } else if (
-        newTransactions.length > previousTransactionCount &&
-        previousTransactionCount > 0
-      ) {
-        playNotificationSound();
-        setLastTransactionTime(new Date());
-        setCricketsPlayed(false);
-      }
-
-      setPreviousTransactionCount(newTransactions.length);
-      setTransactions(newTransactions);
-    } catch (error) {
-      console.error("Failed to fetch transactions:", error);
-      setTransactions([]); // En caso de error, establecer array vacío
-    } finally {
-      setLoading((prev) => ({ ...prev, transactions: false }));
-    }
-  };
+  // The transactions panel owns its own fetching (it paginates and searches on
+  // the server); it just tells us when something new landed so we can play the
+  // sound and reset the inactivity timer.
+  const handleNewTransaction = useCallback(() => {
+    playNotificationSound();
+    setLastTransactionTime(new Date());
+    setCricketsPlayed(false);
+  }, []);
 
   const fetchRevenueMetrics = async () => {
     setLoading((prev) => ({ ...prev, revenue: true }));
@@ -444,7 +389,6 @@ export default function BusinessOverview() {
       fetchActiveUsers(),
       fetchRegisteredUsers(),
       fetchPageViews(),
-      fetchTransactions(),
       fetchRevenueMetrics(),
       fetchSubscriptions(),
     ]);
@@ -453,29 +397,21 @@ export default function BusinessOverview() {
   };
 
   useEffect(() => {
-    // Initial fetch
     fetchAllMetrics();
-
-    // Habilitar audio automáticamente
     enableAudio();
 
-    // Todas las métricas se actualizan cada 5 minutos
-    const generalInterval = setInterval(
-      () => {
-        fetchActiveUsers();
-        fetchRegisteredUsers();
-        fetchPageViews();
-        fetchTransactions();
-        fetchRevenueMetrics();
-        fetchSubscriptions();
-        setLastUpdated(new Date());
-      },
-      5 * 60 * 1000 // 5 minutos
-    );
+    // Everything refreshes every 5 minutes.
+    const generalInterval = setInterval(() => {
+      fetchAllMetrics();
+      // Nudges the transactions panel to re-poll its current page.
+      setRefreshKey((key) => key + 1);
+    }, 5 * 60 * 1000);
 
     return () => {
       clearInterval(generalInterval);
     };
+    // Runs once: the interval closes over stable fetchers.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   // Verificar inactividad cada hora
@@ -585,6 +521,15 @@ export default function BusinessOverview() {
                   currencyBreakdown={revenueMetrics.currencyBreakdown}
                   // Agregar aclaración de ventas externas
                   externalNote="Ventas externas: $3,000"
+                  refundNote={
+                    revenueMetrics.refunds && revenueMetrics.refunds.count > 0
+                      ? `↩ ${
+                          revenueMetrics.refunds.count
+                        } reembolso(s) por $${formatEuropeanNumber(
+                          revenueMetrics.refunds.amount
+                        )} ya descontados`
+                      : undefined
+                  }
                 />
                 <MetricCard
                   title="Transacciones exitosas"
@@ -597,15 +542,10 @@ export default function BusinessOverview() {
               </div>
 
               {/* Page Views Card with Chart - altura fija */}
-              <div className="bg-white rounded-2xl shadow-lg p-6 h-96">
-                {loading.pageViews ? (
-                  <div className="animate-pulse">
-                    <div className="h-16 bg-gray-200 rounded mb-4"></div>
-                    <div className="h-6 bg-gray-200 rounded w-1/2 mb-4"></div>
-                    <div className="h-32 bg-gray-200 rounded"></div>
-                  </div>
-                ) : (
-                  <>
+              {loading.pageViews ? (
+                <ChartCardSkeleton />
+              ) : (
+                <div className="bg-white rounded-2xl shadow-lg p-6 h-96">
                     <div className="text-5xl font-bold text-gray-900 mb-2">
                       {formatEuropeanInteger(metrics.pageViewsYesterday)}
                     </div>
@@ -704,124 +644,17 @@ export default function BusinessOverview() {
                         </ChartContainer>
                       </div>
                     )}
-                  </>
-                )}
-              </div>
+                </div>
+              )}
             </div>
 
             {/* Right Column - 40% width (2/5) - altura fija para coincidir */}
             <div className="col-span-2">
-              <div
-                className="bg-white rounded-2xl shadow-lg p-6 flex flex-col"
-                style={{ height: "43.5rem" }}
-              >
-                <h3 className="text-2xl font-bold text-gray-900 mb-6">
-                  Últimas transacciones
-                </h3>
-
-                {loading.transactions ? (
-                  <div className="space-y-3 flex-1">
-                    {Array.from({ length: 7 }).map((_, i) => (
-                      <div
-                        key={i}
-                        className="animate-pulse flex justify-between items-center py-2"
-                      >
-                        <div>
-                          <div className="h-4 bg-gray-200 rounded w-32 mb-2"></div>
-                          <div className="h-3 bg-gray-200 rounded w-24"></div>
-                        </div>
-                        <div className="h-4 bg-gray-200 rounded w-16"></div>
-                      </div>
-                    ))}
-                  </div>
-                ) : (
-                  <div className="space-y-3 flex-1 overflow-hidden">
-                    {(Array.isArray(transactions) ? transactions : [])
-                      .slice(0, 7)
-                      .map((transaction, index) => (
-                        <div
-                          key={index}
-                          className="flex justify-between items-center py-3 border-b border-gray-100 last:border-b-0"
-                        >
-                          <div className="flex-1 min-w-0">
-                            <div className="flex items-center gap-2 mb-1">
-                              <div className="font-semibold text-gray-900">
-                                ${transaction.amount.toFixed(2)}{" "}
-                                {transaction.currency || "USD"}
-                              </div>
-                              {transaction.status && (
-                                <Tooltip>
-                                  <TooltipTrigger asChild>
-                                    <span
-                                      className={`px-2 py-1 text-xs rounded-full cursor-default ${
-                                        transaction.status === "succeeded"
-                                          ? "bg-green-100 text-green-800"
-                                          : transaction.status === "pending"
-                                          ? "bg-yellow-100 text-yellow-800"
-                                          : "bg-red-100 text-red-800"
-                                      }`}
-                                    >
-                                      {transaction.status}
-                                    </span>
-                                  </TooltipTrigger>
-                                  {transaction.status !== "succeeded" && (
-                                    <TooltipContent side="top" align="start">
-                                      <div className="text-xs max-w-xs">
-                                        {transaction.failure_reason ||
-                                          "No error reason available from Stripe."}
-                                        {transaction.failure_code && (
-                                          <div className="mt-1 text-[10px] text-gray-400">
-                                            Code: {transaction.failure_code}
-                                          </div>
-                                        )}
-                                      </div>
-                                    </TooltipContent>
-                                  )}
-                                </Tooltip>
-                              )}
-                            </div>
-                            <div className="text-sm text-gray-600 truncate">
-                              {transaction.customer_name || transaction.email}
-                            </div>
-                            {transaction.customer_name && (
-                              <div className="text-xs text-gray-400 truncate">
-                                {transaction.email}
-                              </div>
-                            )}
-                          </div>
-                          <div className="flex flex-col items-end text-sm text-gray-500 ml-4 flex-shrink-0">
-                            <div className="flex items-center gap-3 text-sm text-gray-500">
-                              {transaction.coupon_name ? (
-                                <div className="flex flex-col items-end">
-                                  <span className="font-bold text-blue-600 text-xs">
-                                    {transaction.coupon_name}
-                                  </span>
-                                  {transaction.amount_saved && (
-                                    <span className="text-green-600 text-[10px] font-semibold">
-                                      Ahorró $
-                                      {transaction.amount_saved.toFixed(2)}
-                                    </span>
-                                  )}
-                                </div>
-                              ) : (
-                                <span className="text-gray-400 text-xs">
-                                  Sin cupón
-                                </span>
-                              )}
-                              <span>•</span>
-                              <span>
-                                {formatDateTime(
-                                  transaction.date,
-                                  transaction.time
-                                )}
-                              </span>
-                            </div>
-                          </div>
-                        </div>
-                      ))}
-                  </div>
-                )}
-              </div>
+              <TransactionsPanel
+                refreshKey={refreshKey}
+                onInteraction={onInteraction}
+                onNewTransaction={handleNewTransaction}
+              />
             </div>
           </div>
 

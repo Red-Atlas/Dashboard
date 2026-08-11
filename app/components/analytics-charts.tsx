@@ -4,6 +4,9 @@ import { useState, useEffect } from "react"
 import { Line, LineChart, XAxis, YAxis, ResponsiveContainer, Tooltip, CartesianGrid } from "recharts"
 import { ChartContainer } from "@/components/ui/chart"
 import Image from "next/image"
+import { apiCache } from "@/app/utils/apiCache"
+import { CACHE_DURATION_MS } from "@/app/config/cache"
+import { Skeleton } from "@/components/ui/skeleton"
 
 interface ChartData {
   date: string
@@ -57,10 +60,11 @@ function ChartCard({ title, data, loading, color, format = "number", subtitle }:
   return (
     <div className="bg-white rounded-2xl shadow-lg p-6">
       {loading ? (
-        <div className="animate-pulse">
-          <div className="h-6 bg-gray-200 rounded mb-4"></div>
-          <div className="h-8 bg-gray-200 rounded mb-4"></div>
-          <div className="h-32 bg-gray-200 rounded"></div>
+        <div aria-busy="true">
+          <Skeleton className="h-5 w-40 mb-2" />
+          <Skeleton className="h-8 w-28 mb-1" />
+          <Skeleton className="h-3 w-48 mb-6" />
+          <Skeleton className="h-56 w-full" />
         </div>
       ) : (
         <>
@@ -161,113 +165,46 @@ export default function AnalyticsCharts() {
     })
 
     try {
-             // Fetch all data in parallel (including historical data)
-       const [subscriptions, registeredUsers, pageViewsToday, pageViewsByHour, revenue, subscriptionsHistory, registeredUsersHistory, revenueHistory] = await Promise.all([
-         fetch("/api/metrics/stripe-subscriptions").then(r => r.json()),
-         fetch("/api/metrics/registered-users").then(r => r.json()),
-         fetch("/api/metrics/page-views-today").then(r => r.json()),
-         fetch("/api/metrics/page-views-by-hour").then(r => r.json()),
-         fetch("/api/metrics/stripe-revenue").then(r => r.json()),
-         fetch("/api/metrics/stripe-subscriptions-history").then(r => r.json()),
-         fetch("/api/metrics/registered-users-history").then(r => r.json()),
-         fetch("/api/metrics/stripe-revenue-history").then(r => r.json())
-       ])
+      // Only the four series this screen actually plots. It previously also
+      // fetched stripe-subscriptions, registered-users, page-views-today and
+      // stripe-revenue — four extra round trips whose results went unused once
+      // the history endpoints were in place.
+      const [
+        pageViewsByHour,
+        subscriptionsHistory,
+        registeredUsersHistory,
+        revenueHistory,
+      ] = await Promise.all([
+        apiCache.fetch("/api/metrics/page-views-by-hour", CACHE_DURATION_MS),
+        apiCache.fetch(
+          "/api/metrics/stripe-subscriptions-history",
+          CACHE_DURATION_MS
+        ),
+        apiCache.fetch(
+          "/api/metrics/registered-users-history",
+          CACHE_DURATION_MS
+        ),
+        apiCache.fetch("/api/metrics/stripe-revenue-history", CACHE_DURATION_MS),
+      ])
 
-             // Generate mock data for the last 7 days (since we don't have historical data)
-       const generateMockData = (baseValue: number, variation: number = 0.2, maxMultiplier: number = 1.3) => {
-         const data = []
-         const today = new Date()
-         
-         // If base value is too low, use a minimum value for better visualization
-         const effectiveBaseValue = baseValue > 0 ? baseValue : 10
-         
-         for (let i = 6; i >= 0; i--) {
-           const date = new Date(today)
-           date.setDate(date.getDate() - i)
-           
-           // Add some random variation to make it look realistic
-           const randomVariation = 1 + (Math.random() - 0.5) * variation
-           let value = Math.round(effectiveBaseValue * randomVariation)
-           
-           // Ensure minimum values for better visualization (70% del valor base)
-           if (value < effectiveBaseValue * 0.7) {
-             value = Math.round(effectiveBaseValue * 0.7)
-           }
-           
-           // Ensure maximum values don't exceed the specified multiplier for better chart scaling
-           if (value > effectiveBaseValue * maxMultiplier) {
-             value = Math.round(effectiveBaseValue * maxMultiplier)
-           }
-           
-           data.push({
-             date: date.toLocaleDateString('es-ES', { day: 'numeric', month: 'short' }),
-             value: value
-           })
-         }
-         return data
-       }
+      // Every series below is real per-day data. The history endpoints used to
+      // return today's total jittered by Math.random() for each of the 7 days,
+      // and this component then overwrote the final point with a 28-day total —
+      // which put a 4-week figure at the end of a chart labelled "diarias".
+      const toSeries = (payload: any): ChartData[] =>
+        Array.isArray(payload?.data)
+          ? payload.data.map((item: any) => ({
+              date: item.date,
+              value: item.value ?? item.views ?? 0,
+            }))
+          : [];
 
-             // Use historical data from APIs, but ensure today's value matches the first screen
-       const realPaidUsers = (subscriptions.active_count || 0) + 15 // Same as business-overview.tsx
-       const paidUsersData = subscriptionsHistory.data ? subscriptionsHistory.data.map((item: any, index: number) => {
-         // If it's today (last item), use the exact value from first screen
-         if (index === subscriptionsHistory.data.length - 1) {
-           return {
-             date: item.date,
-             value: realPaidUsers
-           }
-         }
-         return {
-           date: item.date,
-           value: item.value
-         }
-       }) : []
-       
-       // Use historical registered users data, but ensure today's value matches the first screen
-       const realRegisteredUsers = registeredUsers.value || 0 // Same as business-overview.tsx
-       const registeredUsersData = registeredUsersHistory.data ? registeredUsersHistory.data.map((item: any, index: number) => {
-         // If it's today (last item), use the exact value from first screen
-         if (index === registeredUsersHistory.data.length - 1) {
-           return {
-             date: item.date,
-             value: realRegisteredUsers
-           }
-         }
-         return {
-           date: item.date,
-           value: item.value
-         }
-       }) : []
-       
-       // Use page views from page-views-by-hour API (same as business-overview.tsx)
-       // Convert the data format to match our chart format
-       const pageViewsData = pageViewsByHour.data ? pageViewsByHour.data.slice(-7).map((item: any) => ({
-         date: item.date,
-         value: item.views
-       })) : []
-       
-       // Use historical revenue data, but ensure today's value matches the first screen
-       const realRevenue = (revenue.totalRevenue || 0) + 3000 // Same as business-overview.tsx
-       const revenueData = revenueHistory.data ? revenueHistory.data.map((item: any, index: number) => {
-         // If it's today (last item), use the exact value from first screen
-         if (index === revenueHistory.data.length - 1) {
-           return {
-             date: item.date,
-             value: realRevenue
-           }
-         }
-         return {
-           date: item.date,
-           value: item.value
-         }
-       }) : []
-
-             setAnalyticsData({
-         paidUsers: paidUsersData,
-         activeUsers: registeredUsersData, // Using registered users data
-         pageViews: pageViewsData,
-         revenue: revenueData
-       })
+      setAnalyticsData({
+        paidUsers: toSeries(subscriptionsHistory),
+        activeUsers: toSeries(registeredUsersHistory),
+        pageViews: toSeries(pageViewsByHour).slice(-7),
+        revenue: toSeries(revenueHistory),
+      })
     } catch (error) {
       console.error("Failed to fetch analytics data:", error)
     } finally {
