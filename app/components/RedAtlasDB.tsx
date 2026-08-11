@@ -1,226 +1,221 @@
-"use client"
+"use client";
 
-import React, { useEffect, useState } from 'react';
-import Image from "next/image"
+import { useCallback, useEffect, useState } from "react";
+import Image from "next/image";
+import { apiCache } from "@/app/utils/apiCache";
+import { CACHE_DURATION_MS } from "@/app/config/cache";
+import { Skeleton } from "@/components/ui/skeleton";
+
+interface MarketCount {
+  pri: number;
+  col: number;
+}
 
 interface AtlasData {
-  data: {
-    parcels: {
-      pri: number;
-      col: number;
-    };
-    listings: {
-      pri: number;
-      col: number;
-    };
-    users: {
-      pri: number;
-      col: number;
-      externalPayments: number;
-    };
-    dataSources: {
-      byType: Array<{
-        key: string;
-        doc_count: number;
-      }>;
-    };
-    coupons: any;
-  };
-  errors: any[];
+  parcels: MarketCount;
+  listings: MarketCount;
+  transactions: MarketCount;
+  news: number;
+  users: (MarketCount & { externalPayments: number }) | null;
+  source: "public" | "admin";
+  fetchedAt: string;
 }
+
+const formatNumber = (value: number) =>
+  value.toString().replace(/\B(?=(\d{3})+(?!\d))/g, ",");
+
+const formatMarkets = (counts: MarketCount | undefined) =>
+  `PR: ${formatNumber(counts?.pri ?? 0)} | COL: ${formatNumber(
+    counts?.col ?? 0
+  )}`;
 
 interface MetricCardProps {
   title: string;
   value: string | number;
   subtitle?: string;
-  loading: boolean;
   color?: string;
 }
 
-// Helper function for number formatting
-const formatNumber = (val: number) => {
-  return val.toString().replace(/\B(?=(\d{3})+(?!\d))/g, ',');
-};
-
-function MetricCard({ title, value, subtitle, loading, color = "#3b82f6" }: MetricCardProps) {
-  if (loading) {
-    return (
-      <div className="bg-white rounded-2xl shadow-lg p-6">
-        <div className="animate-pulse">
-          <div className="h-4 bg-gray-200 rounded w-3/4 mb-2"></div>
-          <div className="h-8 bg-gray-200 rounded w-1/2 mb-2"></div>
-          <div className="h-3 bg-gray-200 rounded w-full"></div>
-        </div>
-      </div>
-    );
-  }
-
+function MetricCard({
+  title,
+  value,
+  subtitle,
+  color = "#3b82f6",
+}: MetricCardProps) {
   return (
     <div className="bg-white rounded-2xl shadow-lg p-6 hover:shadow-xl transition-shadow duration-300">
       <div className="flex items-center justify-between mb-4">
         <h3 className="text-lg font-semibold text-gray-700">{title}</h3>
-        <div 
-          className="w-3 h-3 rounded-full" 
+        <div
+          className="w-3 h-3 rounded-full"
           style={{ backgroundColor: color }}
-        ></div>
+        />
       </div>
-      
       <div className="mb-2">
-        <span 
-          className="text-3xl font-bold"
-          style={{ color: color }}
-        >
-          {typeof value === 'number' ? formatNumber(value) : value}
+        <span className="text-3xl font-bold" style={{ color }}>
+          {typeof value === "number" ? formatNumber(value) : value}
         </span>
       </div>
-      
-      {subtitle && (
-        <p className="text-sm text-gray-500">{subtitle}</p>
-      )}
+      {subtitle && <p className="text-sm text-gray-500">{subtitle}</p>}
     </div>
   );
 }
 
-const RedAtlasDB = () => {
-  const [data, setData] = useState<AtlasData | null>(null);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<Error | null>(null);
-  const [mounted, setMounted] = useState(false);
-
-  useEffect(() => {
-    setMounted(true);
-  }, []);
-
-  useEffect(() => {
-    if (mounted) {
-      const fetchData = async () => {
-        try {
-          const response = await fetch('/api/atlas-data');
-          if (!response.ok) {
-            throw new Error('Network response was not ok');
-          }
-          const result: AtlasData = await response.json();
-          setData(result);
-        } catch (error: any) {
-          setError(error);
-        } finally {
-          setLoading(false);
-        }
-      };
-
-      fetchData();
-    }
-  }, [mounted]);
-
-  if (error) {
-    return (
-      <div className="min-h-screen p-8 relative bg-gray-50">
-        <div className="absolute top-8 left-8">
-          <Image src="/red-atlas-logo.png" alt="RED Atlas Logo" width={200} height={60} className="h-16 w-auto" />
-        </div>
-        <div className="mt-24 flex items-center justify-center">
-          <div className="text-center">
-            <h1 className="text-2xl font-bold text-red-600 mb-4">Error de Conexión</h1>
-            <p className="text-gray-600">No se pudo conectar a la base de datos</p>
-            <p className="text-sm text-gray-500 mt-2">{error.message}</p>
-          </div>
-        </div>
+function MetricCardSkeleton() {
+  return (
+    <div className="bg-white rounded-2xl shadow-lg p-6">
+      <div className="flex items-center justify-between mb-4">
+        <Skeleton className="h-6 w-32" />
+        <Skeleton className="h-3 w-3 rounded-full" />
       </div>
-    );
-  }
+      <Skeleton className="h-9 w-48 mb-3" />
+      <Skeleton className="h-4 w-full max-w-xs" />
+    </div>
+  );
+}
 
-  // Get news count from dataSources
-  const newsCount = data?.data?.dataSources?.byType?.find(item => item.key === "News")?.doc_count || 0;
-
-  if (!mounted || loading) {
-    return (
-      <div className="min-h-screen p-8 relative bg-gray-50">
-        <div className="absolute top-8 left-8">
-          <Image src="/red-atlas-logo.png" alt="RED Atlas Logo" width={200} height={60} className="h-16 w-auto" />
-        </div>
-        <div className="absolute top-8 right-8 text-right">
-          <p className="text-xl text-gray-600">Base de Datos Red Atlas</p>
-        </div>
-        <div className="mt-24">
-          <div className="max-w-7xl mx-auto">
-            <div className="text-center mb-12">
-              <h1 className="text-4xl font-bold text-gray-900 mb-2">Datos de la Base de Datos</h1>
-              <p className="text-lg text-gray-600">Cargando información...</p>
-            </div>
-            <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
-              {[1, 2, 3, 4].map((i) => (
-                <MetricCard key={i} title="Cargando..." value="..." subtitle="..." loading={true} />
-              ))}
-            </div>
-          </div>
-        </div>
-      </div>
-    );
-  }
-
+function Shell({
+  children,
+  subtitle,
+}: {
+  children: React.ReactNode;
+  subtitle: React.ReactNode;
+}) {
   return (
     <div className="min-h-screen p-8 relative bg-gray-50">
-      {/* Logo */}
       <div className="absolute top-8 left-8">
-        <Image src="/red-atlas-logo.png" alt="RED Atlas Logo" width={200} height={60} className="h-16 w-auto" />
+        <Image
+          src="/red-atlas-logo.png"
+          alt="RED Atlas"
+          width={200}
+          height={60}
+          className="h-16 w-auto"
+          priority
+        />
       </div>
-
-      {/* Title */}
       <div className="absolute top-8 right-8 text-right">
         <p className="text-xl text-gray-600">Base de Datos Red Atlas</p>
       </div>
-
-      {/* Content */}
       <div className="mt-24">
         <div className="max-w-7xl mx-auto">
-          {/* Main Title */}
           <div className="text-center mb-12">
-            <h1 className="text-4xl font-bold text-gray-900 mb-2">Datos de la Base de Datos</h1>
-            <p className="text-lg text-gray-600">Información en tiempo real de Red Atlas</p>
+            <h1 className="text-4xl font-bold text-gray-900 mb-2">
+              Datos de la Base de Datos
+            </h1>
+            <p className="text-lg text-gray-600">{subtitle}</p>
           </div>
-
-          {/* Cards Grid */}
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
-            {/* Parcels Card */}
-            <MetricCard
-              title="Parcelas"
-              value={`PR: ${data?.data?.parcels?.pri ? formatNumber(data.data.parcels.pri) : '0'} | COL: ${data?.data?.parcels?.col ? formatNumber(data.data.parcels.col) : '0'}`}
-              subtitle="Parcelas registradas en Puerto Rico y Colombia"
-              loading={loading}
-              color="#10b981"
-            />
-
-            {/* Listings Card */}
-            <MetricCard
-              title="Listings"
-              value={`PR: ${data?.data?.listings?.pri ? formatNumber(data.data.listings.pri) : '0'} | COL: ${data?.data?.listings?.col ? formatNumber(data.data.listings.col) : '0'}`}
-              subtitle="Propiedades listadas en Puerto Rico y Colombia"
-              loading={loading}
-              color="#3b82f6"
-            />
-
-            {/* Users Card */}
-            <MetricCard
-              title="Usuarios"
-              value={`PR: ${data?.data?.users?.pri ? formatNumber(data.data.users.pri) : '0'} | COL: ${data?.data?.users?.col ? formatNumber(data.data.users.col) : '0'}`}
-              subtitle={`Total de usuarios registrados • Pagos externos: ${data?.data?.users?.externalPayments || 0}`}
-              loading={loading}
-              color="#ef4444"
-            />
-
-            {/* News Card */}
-            <MetricCard
-              title="Noticias"
-              value={newsCount}
-              subtitle="Artículos de noticias en la plataforma"
-              loading={loading}
-              color="#f59e0b"
-            />
-          </div>
+          {children}
         </div>
       </div>
     </div>
   );
-};
+}
 
-export default RedAtlasDB;
+export default function RedAtlasDB() {
+  const [data, setData] = useState<AtlasData | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+
+  const load = useCallback(async () => {
+    try {
+      const result = await apiCache.fetch("/api/atlas-data", CACHE_DURATION_MS);
+      if (result?.error) throw new Error(result.detail || result.error);
+      setData(result as AtlasData);
+      setError(null);
+    } catch (caught) {
+      setError(
+        caught instanceof Error
+          ? caught.message
+          : "No se pudo conectar a la base de datos"
+      );
+    } finally {
+      setLoading(false);
+    }
+  }, []);
+
+  useEffect(() => {
+    load();
+  }, [load]);
+
+  if (loading) {
+    return (
+      <Shell subtitle="Cargando información…">
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-8" aria-busy="true">
+          {Array.from({ length: 4 }).map((_, index) => (
+            <MetricCardSkeleton key={index} />
+          ))}
+        </div>
+      </Shell>
+    );
+  }
+
+  if (error) {
+    return (
+      <Shell subtitle="No se pudo conectar a la base de datos">
+        <div className="max-w-xl mx-auto text-center bg-white rounded-2xl shadow-lg p-8">
+          <h2 className="text-xl font-bold text-red-600 mb-2">
+            Error de conexión
+          </h2>
+          <p className="text-sm text-gray-500 mb-6">{error}</p>
+          <button
+            type="button"
+            onClick={() => {
+              setLoading(true);
+              apiCache.invalidate("/api/atlas-data");
+              load();
+            }}
+            className="px-4 py-2 text-sm rounded-lg border border-gray-200 hover:bg-gray-50"
+          >
+            Reintentar
+          </button>
+        </div>
+      </Shell>
+    );
+  }
+
+  return (
+    <Shell subtitle="Información en tiempo real de Red Atlas">
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+        <MetricCard
+          title="Parcelas"
+          value={formatMarkets(data?.parcels)}
+          subtitle="Parcelas registradas en Puerto Rico y Colombia"
+          color="#10b981"
+        />
+        <MetricCard
+          title="Listings"
+          value={formatMarkets(data?.listings)}
+          subtitle="Propiedades listadas en Puerto Rico y Colombia"
+          color="#3b82f6"
+        />
+        <MetricCard
+          title="Transacciones"
+          value={formatMarkets(data?.transactions)}
+          subtitle="Transacciones inmobiliarias registradas"
+          color="#8b5cf6"
+        />
+        <MetricCard
+          title="Noticias"
+          value={data?.news ?? 0}
+          subtitle="Artículos de noticias en la plataforma"
+          color="#f59e0b"
+        />
+
+        {/*
+          Only present when ATLAS_API_TOKEN is configured — the public Atlas
+          endpoint does not expose user counts.
+        */}
+        {data?.users && (
+          <MetricCard
+            title="Usuarios"
+            value={formatMarkets(data.users)}
+            subtitle={`Total de usuarios registrados • Pagos externos: ${formatNumber(
+              data.users.externalPayments
+            )}`}
+            color="#ef4444"
+          />
+        )}
+      </div>
+    </Shell>
+  );
+}
