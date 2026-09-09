@@ -1,31 +1,31 @@
 /**
- * ⚙️ CONFIGURAÇÃO GLOBAL DE CACHE
+ * ⚙️ GLOBAL CACHE CONFIGURATION
  * 
- * Ajuste este valor para controlar o tempo de cache de TODAS as APIs
- * do dashboard em um único lugar.
+ * Adjust this value to control the cache duration of ALL dashboard
+ * APIs in a single place.
  */
 
-// Tempo de cache em segundos
-// 60 = 1 minuto
-// 300 = 5 minutos
-// 600 = 10 minutos
-// 1800 = 30 minutos
-export const CACHE_DURATION_SECONDS = 1800; // 30 minutos
+// Cache duration in seconds
+// 60 = 1 minute
+// 300 = 5 minutes
+// 600 = 10 minutes
+// 1800 = 30 minutes
+export const CACHE_DURATION_SECONDS = 1800; // 30 minutes
 
-// Tempo de cache em milissegundos (para uso no cliente)
+// Cache duration in milliseconds (for client-side use)
 export const CACHE_DURATION_MS = CACHE_DURATION_SECONDS * 1000;
 
-// Configuração de cache para diferentes tipos de dados
+// Cache configuration for different data types
 export const CACHE_CONFIG = {
-  // Dados que mudam frequentemente (1 minuto)
+  // Data that changes frequently (1 minute)
   REALTIME: 60,
   
-  // Dados padrão (10 minutos)
+  // Default data (10 minutes)
   DEFAULT: CACHE_DURATION_SECONDS,
   
-  // Dados estáveis (30 minutos)
+  // Stable data (30 minutes)
   STABLE: 1800,
   
-  // Sem cache (para transações em tempo real)
+  // No cache (for real-time transactions)
   NO_CACHE: 0,
 } as const;

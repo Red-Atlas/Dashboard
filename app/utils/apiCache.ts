@@ -1,6 +1,6 @@
 /**
- * Sistema de cache simples para APIs
- * Evita chamadas repetidas e melhora performance
+ * Simple cache system for APIs
+ * Avoids repeated calls and improves performance
  */
 
 interface CacheEntry {
@@ -13,27 +13,27 @@ class APICache {
   private cache: Map<string, CacheEntry> = new Map()
 
   /**
-   * Busca dados do cache ou faz a requisição
-   * @param url URL da API
-   * @param expiresIn Tempo de expiração em milissegundos (padrão: 60 segundos)
+   * Fetches data from the cache or makes the request
+   * @param url API URL
+   * @param expiresIn Expiration time in milliseconds (default: 60 seconds)
    */
   async fetch(url: string, expiresIn: number = 60000): Promise<any> {
     const now = Date.now()
     const cached = this.cache.get(url)
 
-    // Se existe cache válido, retornar
+    // If there is a valid cache entry, return it
     if (cached && (now - cached.timestamp) < cached.expiresIn) {
       console.log(`📦 Cache hit for ${url}`)
       return cached.data
     }
 
-    // Caso contrário, fazer a requisição
+    // Otherwise, make the request
     console.log(`🌐 Fetching ${url}`)
     try {
       const response = await fetch(url)
       const data = await response.json()
 
-      // Salvar no cache
+      // Save to the cache
       this.cache.set(url, {
         data,
         timestamp: now,
@@ -44,7 +44,7 @@ class APICache {
     } catch (error) {
       console.error(`❌ Error fetching ${url}:`, error)
       
-      // Se tiver cache expirado, retornar mesmo assim
+      // If there is an expired cache entry, return it anyway
       if (cached) {
         console.log(`⚠️ Using stale cache for ${url}`)
         return cached.data
@@ -55,21 +55,21 @@ class APICache {
   }
 
   /**
-   * Limpa o cache de uma URL específica
+   * Clears the cache for a specific URL
    */
   invalidate(url: string) {
     this.cache.delete(url)
   }
 
   /**
-   * Limpa todo o cache
+   * Clears the entire cache
    */
   clear() {
     this.cache.clear()
   }
 
   /**
-   * Remove entradas expiradas do cache
+   * Removes expired entries from the cache
    */
   cleanup() {
     const now = Date.now()
@@ -81,10 +81,10 @@ class APICache {
   }
 }
 
-// Instância singleton
+// Singleton instance
 export const apiCache = new APICache()
 
-// Limpar cache expirado a cada 5 minutos
+// Clear expired cache entries every 5 minutes
 if (typeof window !== 'undefined') {
   setInterval(() => {
     apiCache.cleanup()

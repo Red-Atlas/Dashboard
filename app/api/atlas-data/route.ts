@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { CACHE_DURATION_SECONDS } from "@/app/config/cache";
 
-// Cache manual em memória
+// Manual in-memory cache
 let cachedData: any = null;
 let cacheTimestamp: number = 0;
 
@@ -11,7 +11,7 @@ export async function GET() {
     const cacheAgeMs = now - cacheTimestamp;
     const cacheMaxAgeMs = CACHE_DURATION_SECONDS * 1000;
 
-    // Se tem cache válido, retornar
+    // If there is a valid cache entry, return it
     if (cachedData && cacheAgeMs < cacheMaxAgeMs) {
       return NextResponse.json(cachedData, {
         headers: {
@@ -24,7 +24,7 @@ export async function GET() {
       });
     }
 
-    // Cache expirado ou não existe, buscar dados
+    // Cache expired or missing, fetch data
     const response = await fetch("https://api.atlas.red/api/dashboard", {
       headers: {
         "x-admin-key": process.env.X_ADMIN_KEY || "",
@@ -38,7 +38,7 @@ export async function GET() {
 
     const data = await response.json();
 
-    // Atualizar cache
+    // Update cache
     cachedData = data;
     cacheTimestamp = now;
 
@@ -51,7 +51,7 @@ export async function GET() {
       },
     });
   } catch (error: any) {
-    // Se tiver cache (mesmo expirado), retornar em caso de erro
+    // If there is a cache entry (even an expired one), return it on error
     if (cachedData) {
       return NextResponse.json(cachedData, {
         headers: {

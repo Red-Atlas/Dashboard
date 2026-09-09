@@ -1,38 +1,38 @@
 import { useEffect, useRef } from "react";
 
 /**
- * Hook para fazer prefetch de dados antes de precisar deles
- * Isso melhora a performance ao carregar dados da próxima tela antecipadamente
+ * Hook to prefetch data before it is needed
+ * This improves performance by loading the next screen's data ahead of time
  */
 export function usePrefetch(
   currentScreen: number,
   enabledScreens: number[],
-  prefetchDelay: number = 15000, // 15 segundos antes de mudar de tela
+  prefetchDelay: number = 15000, // 15 seconds before switching screens
   isEnabled: boolean = true
 ) {
   const prefetchedRef = useRef<Set<number>>(new Set());
 
   useEffect(() => {
-    // Se o prefetch estiver desabilitado (ex: usuário não autenticado), não fazer nada
+    // If prefetching is disabled (e.g. unauthenticated user), do nothing
     if (!isEnabled) {
       return;
     }
 
-    // Determinar qual é a próxima tela
+    // Determine which screen is next
     const currentIndex = enabledScreens.indexOf(currentScreen);
     const nextIndex = (currentIndex + 1) % enabledScreens.length;
     const nextScreen = enabledScreens[nextIndex];
 
-    // Se já fizemos prefetch desta tela, não fazer novamente
+    // If we already prefetched this screen, don't do it again
     if (prefetchedRef.current.has(nextScreen)) {
       return;
     }
 
-    // Aguardar um tempo antes de fazer o prefetch
+    // Wait a while before prefetching
     const timer = setTimeout(() => {
       console.log(`🚀 Prefetching data for screen ${nextScreen}`);
 
-      // Fazer prefetch baseado na tela
+      // Prefetch based on the screen
       switch (nextScreen) {
         case 0: // BusinessOverview
           prefetchBusinessData();
@@ -57,9 +57,9 @@ export function usePrefetch(
     return () => clearTimeout(timer);
   }, [currentScreen, enabledScreens, prefetchDelay, isEnabled]);
 
-  // Reset prefetch cache quando mudar de tela
+  // Reset the prefetch cache when the screen changes
   useEffect(() => {
-    // Manter apenas as últimas 2 telas em cache
+    // Keep only the last 2 screens in the cache
     if (prefetchedRef.current.size > 2) {
       const array = Array.from(prefetchedRef.current);
       prefetchedRef.current = new Set(array.slice(-2));
@@ -67,7 +67,7 @@ export function usePrefetch(
   }, [currentScreen, isEnabled]);
 }
 
-// Funções de prefetch para cada tela
+// Prefetch functions for each screen
 async function prefetchBusinessData() {
   try {
     await Promise.all([

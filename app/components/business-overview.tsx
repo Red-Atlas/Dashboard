@@ -357,7 +357,7 @@ export default function BusinessOverview() {
     setLoading((prev) => ({ ...prev, transactions: true }));
     try {
       const response = await fetch("/api/metrics/stripe-transactions", {
-        cache: "no-store", // Sempre buscar dados frescos
+        cache: "no-store", // Always fetch fresh data
       });
       const data = await response.json();
 
